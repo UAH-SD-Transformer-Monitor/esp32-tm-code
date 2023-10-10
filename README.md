@@ -6,6 +6,8 @@ This is the code that will control the ESP32.
 
 We will be using PlatformIO for this project. This will allow us to possibly use its remote test and dev features.
 
+You will need to change your upload port in `platformio.ini`.
+
 ## Env variables
 
 Add the env variables to a `.env` file before building it:
