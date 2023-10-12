@@ -1,5 +1,9 @@
 Import("env")
 
+# dictionary of environment variable names with the names as the values
+# the keys may be the same as the values
+# the keys must be defined in an .env file or the OS environment
+# key (can be anything): value (must be in the .env file or OS environment)
 envVars = {
 "WIFI_SSID": "TRANSFORMER_MON_WIFI_SSID",
 "WIFI_PASSWD": "TRANSFORMER_MON_WIFI_PASSWD",
@@ -30,5 +34,5 @@ if wifiPasswd == None:
 
 env.Append(CPPDEFINES=[
   ("TM_WIFI_SSID", wifiSSID ),
-  ("TM_WIFI_PASSWD", os.getenv("TRANSFORMER_MON_WIFI_PASSWD") )
+  ("TM_WIFI_PASSWD", wifiPasswd )
 ])
