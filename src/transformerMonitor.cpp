@@ -6,8 +6,9 @@
   2017 - Evandro Copercini - Apache 2.0 License.
 */
 
-#include <WiFiClientSecure.h>
 #include <transformerMonitor.h>
+
+
 
 const char*  server = "www.howsmyssl.com";  // Server URL
 
