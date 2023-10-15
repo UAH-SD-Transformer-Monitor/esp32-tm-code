@@ -7,6 +7,9 @@ Import("env")
 envVars = {
 "WIFI_SSID": "TRANSFORMER_MON_WIFI_SSID",
 "WIFI_PASSWD": "TRANSFORMER_MON_WIFI_PASSWD",
+"SSL_ENABLED": "TRANSFORMER_MON_USE_SSL",
+"MQTT_PORT": "TRANSFORMER_MON_MQTT_PORT",
+"MQTT_SERVER": "TRANSFORMER_MON_MQTT_SERVER",
 }
 
 try:
@@ -20,6 +23,12 @@ dotenv.load_dotenv()
 
 import os
 import ssl
+
+sslEnabled = os.getenv(envVars["SSL_ENABLED"])
+mqttPort = 1083
+if sslEnabled != "enabled" | sslEnabled == None:
+  os.environ[envVars["MQTT_PORT"]] = 1083
+   
 
 wifiSSID = os.getenv(envVars["WIFI_SSID"])
 wifiPasswd = os.getenv(envVars["WIFI_PASSWD"])
@@ -37,15 +46,16 @@ env.Append(CPPDEFINES=[
   ("TM_WIFI_SSID", wifiSSID ),
   ("TM_WIFI_PASSWD", wifiPasswd )
 ])
-# certHeaderFile = open("include/transformerMonitorServerCert.h", "w")
-# certHeaderFile.write("const char* root_ca= \\")
-# certHeaderFile.close()
+
+
 certStr = "const char* root_ca= \\\n"
-cert = ssl.get_server_certificate(('public.cloud.shiftr.io', 443))
+# get the SSL cert and write it to a file
+cert = ssl.get_server_certificate(('public.cloud.shiftr.io', 8883))
 w = open("transformer_monitor_cert.pem", "w")
 w.writelines(cert.splitlines(True))
 w.close()
 
+# transform the certificate to a multi-line C-string variable
 with open("transformer_monitor_cert.pem", "r") as file:
   for item in file:
     for i in item.splitlines():
@@ -53,9 +63,6 @@ with open("transformer_monitor_cert.pem", "r") as file:
         certStr += " \"" + str(i) + "\\n\""
       else:
         certStr += " \"" + str(i) + "\\n\"\\\n"
-      print(i)
-
-print(certStr)
 
 certHeaderFile = open("include/transformerMonitorServerCert.h", "w")
 certHeaderFile.write(certStr)
