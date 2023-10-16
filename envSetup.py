@@ -41,7 +41,7 @@ env.Append(CPPDEFINES=[
 # certHeaderFile.write("const char* root_ca= \\")
 # certHeaderFile.close()
 certStr = "const char* root_ca= \\\n"
-cert = ssl.get_server_certificate(('public.cloud.shiftr.io', 443))
+cert = ssl.get_server_certificate(('public.cloud.shiftr.io', 8883))
 w = open("transformer_monitor_cert.pem", "w")
 w.writelines(cert.splitlines(True))
 w.close()

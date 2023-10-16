@@ -28,9 +28,19 @@ void connect() {
     // wait 1 second for re-trying
     delay(1000);
   }
-
   Serial.print("Connected to ");
   Serial.println(ssid);
+
+  Serial.print("\nconnecting...");
+  while (!client.connect("arduino", "public", "public")) {
+    Serial.print(".");
+    delay(1000);
+  }
+
+  Serial.println("\nconnected!");
+
+  client.subscribe("/hello");
+  
 }
 
 
@@ -41,17 +51,12 @@ void setup() {
   
   delay(100);
 
-
-
-
   wifiClient.setCACert(root_ca);
 
   client.subscribe("/hello");
   // client.unsubscribe("/hello");
-  client.begin("public.cloud.shiftr.io", wifiClient);
+  client.begin("public.cloud.shiftr.io", 8883, wifiClient);
   client.onMessage(messageReceived);
-
-  connect();
 }
 
 void messageReceived(String &topic, String &payload) {
