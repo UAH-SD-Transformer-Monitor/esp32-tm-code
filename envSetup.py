@@ -27,7 +27,7 @@ import ssl
 sslEnabled = os.getenv(envVars["SSL_ENABLED"])
 mqttPort = 1083
 if sslEnabled != "enabled" or sslEnabled == None:
-  os.environ[envVars["MQTT_PORT"]] = 1083
+  os.environ[envVars["MQTT_PORT"]] = "1083"
    
 
 wifiSSID = os.getenv(envVars["WIFI_SSID"])
