@@ -24,6 +24,7 @@ dotenv.load_dotenv()
 import os
 import ssl
 
+mqttServer = os.getenv(envVars["MQTT_SERVER"])
 sslEnabled = os.getenv(envVars["SSL_ENABLED"])
 mqttPort = 1083
 if sslEnabled != "enabled" or sslEnabled == None:
@@ -32,6 +33,8 @@ if sslEnabled != "enabled" or sslEnabled == None:
 
 wifiSSID = os.getenv(envVars["WIFI_SSID"])
 wifiPasswd = os.getenv(envVars["WIFI_PASSWD"])
+
+
 
 if wifiSSID == None:
     print(f"Environment variable {envVars['WIFI_SSID']} variable not defined. Define it in a .env file at the root of the project.")
@@ -44,7 +47,9 @@ if wifiPasswd == None:
 
 env.Append(CPPDEFINES=[
   ("TM_WIFI_SSID", wifiSSID ),
-  ("TM_WIFI_PASSWD", wifiPasswd )
+  ("TM_WIFI_PASSWD", wifiPasswd ),
+  ("TM_MQTT_SERVER", mqttServer),
+  ("TM_MQTT_PORT", mqttPort)
 ])
 
 

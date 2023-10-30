@@ -1,5 +1,5 @@
 #include <WiFiClientSecure.h>
-#include <MQTT.h>
+#include <PubSubClient.h>
 #include <SPI.h>
 // Turn build flags (Macros) into strings
 #define ST(A) #A
@@ -11,11 +11,17 @@
 #ifdef TM_WIFI_PASSWD
    char const *wifiPassword = STR(TM_WIFI_PASSWD);
 #endif
+#ifdef TM_MQTT_PORT
+   int mqttPort = atoi(STR(TM_MQTT_PORT));
+#endif
+#ifdef TM_MQTT_SERVER
+   uint16_t mqttPort = (uint16_t) strtoul(STR(TM_MQTT_SERVER), NULL, 10);
+#endif
 
-#define MQTT_BROKER_URI "mqtt://"
+
 
 void messageReceived(String &topic, String &payload);
 
 
 WiFiClientSecure wifiClient;
-MQTTClient client;
+PubSubClient mqttClient;

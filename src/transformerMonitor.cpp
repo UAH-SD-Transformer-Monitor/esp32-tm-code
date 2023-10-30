@@ -12,6 +12,8 @@
 
 unsigned long lastMillis = 0;
 
+void setupMQTTServer();
+
 
 // You can use x.509 client certificates if you want
 //const char* test_client_key = "";   //to verify the client
@@ -32,14 +34,14 @@ void connect() {
   Serial.println(ssid);
 
   Serial.print("\nconnecting...");
-  while (!client.connect("arduino", "public", "public")) {
+  while (!mqttClient.connect("arduino", "public", "public")) {
     Serial.print(".");
     delay(1000);
   }
 
   Serial.println("\nconnected!");
 
-  client.subscribe("/hello");
+  mqttClient.subscribe("/hello");
   
 }
 
@@ -53,10 +55,6 @@ void setup() {
 
   wifiClient.setCACert(root_ca);
 
-  client.subscribe("/hello");
-  // client.unsubscribe("/hello");
-  client.begin("public.cloud.shiftr.io", 8883, wifiClient);
-  client.onMessage(messageReceived);
 }
 
 void messageReceived(String &topic, String &payload) {
@@ -70,16 +68,24 @@ void messageReceived(String &topic, String &payload) {
 
 
 void loop() {
-  client.loop();
+  mqttClient.loop();
   delay(10);  // <- fixes some issues with WiFi stability
 
-  if (!client.connected()) {
+  if (!mqttClient.connected()) {
     connect();
   }
 
   // publish a message roughly every second.
   if (millis() - lastMillis > 1000) {
     lastMillis = millis();
-    client.publish("/hello", "world");
+    mqttClient.publish("/hello", "world");
   }
+
+
+}
+
+void mqttServerSetup() {
+
+mqttClient.setServer("mqttClient", mqttPort);
+
 }
