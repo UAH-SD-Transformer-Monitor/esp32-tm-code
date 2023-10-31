@@ -10,6 +10,9 @@ envVars = {
 "SSL_ENABLED": "TRANSFORMER_MON_USE_SSL",
 "MQTT_PORT": "TRANSFORMER_MON_MQTT_PORT",
 "MQTT_SERVER": "TRANSFORMER_MON_MQTT_SERVER",
+"MQTT_USER": "TRANSFORMER_MON_MQTT_USER",
+"MQTT_ID": "TRANSFORMER_MON_MQTT_ID",
+"MQTT_PASS": "TRANSFORMER_MON_MQTT_PASS",
 }
 
 try:
@@ -43,13 +46,17 @@ if wifiSSID == None:
 if wifiPasswd == None:
     print(f"Environment variable {envVars['WIFI_PASSWD']} variable not defined. Define it in a .env file at the root of the project.")
     os._exit(1)
+if mqttServer == None:
+    print(f"Environment variable {envVars['MQTT_SERVER']} variable not defined. Define it in a .env file at the root of the project.")
+    os._exit(1)
 
 
 env.Append(CPPDEFINES=[
   ("TM_WIFI_SSID", wifiSSID ),
   ("TM_WIFI_PASSWD", wifiPasswd ),
   ("TM_MQTT_SERVER", mqttServer),
-  ("TM_MQTT_PORT", mqttPort)
+  ("TM_MQTT_PORT", mqttPort),
+  ("TM_MQTT_SVR", mqttServer)
 ])
 
 

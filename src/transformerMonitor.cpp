@@ -41,7 +41,7 @@ void connect() {
 
   Serial.println("\nconnected!");
 
-  mqttClient.subscribe("/hello");
+  mqttClient.subscribe("/transformer-mon");
   
 }
 
@@ -78,7 +78,12 @@ void loop() {
   // publish a message roughly every second.
   if (millis() - lastMillis > 1000) {
     lastMillis = millis();
-    mqttClient.publish("/hello", "world");
+    float volts;
+    StaticJsonDocument<256> doc;
+    doc["voltage"] = volts; 
+    char buffer[256];
+    serializeJson(doc, buffer);
+    mqttClient.publish("temp", buffer);
   }
 
 
@@ -86,6 +91,6 @@ void loop() {
 
 void mqttServerSetup() {
 
-mqttClient.setServer("mqttClient", mqttPort);
+mqttClient.setServer(mqttServer, mqttPort);
 
 }
