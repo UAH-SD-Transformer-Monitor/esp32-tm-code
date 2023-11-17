@@ -14,6 +14,8 @@ unsigned long lastMillis = 0;
 
 void setupMQTTServer();
 
+void setupEnergyMonitor();
+
 
 // You can use x.509 client certificates if you want
 //const char* test_client_key = "";   //to verify the client
@@ -34,7 +36,7 @@ void connect() {
   Serial.println(ssid);
 
   Serial.print("\nconnecting...");
-  while (!mqttClient.connect("arduino", "public", "public")) {
+  while (!mqttClient.connect("arduino", "public", mqttPass)) {
     Serial.print(".");
     delay(1000);
   }
@@ -78,7 +80,7 @@ void loop() {
   // publish a message roughly every second.
   if (millis() - lastMillis > 1000) {
     lastMillis = millis();
-    float volts;
+    float volts = eic.GetSysStatus();
     StaticJsonDocument<256> doc;
     doc["voltage"] = volts; 
     char buffer[256];
@@ -93,4 +95,19 @@ void mqttServerSetup() {
 
 mqttClient.setServer(mqttServer, mqttPort);
 
+}
+
+void setupEnergyMonitor(){
+
+  //Must begin ATMSerial before IC init supplying baud rate, serial config, and RX TX pins
+  ATMSerial.begin(9600, SERIAL_8N1, PIN_SerialATM_RX, PIN_SerialATM_TX);
+  
+  eic.InitEnergyIC();
+  delay(1000);
+  unsigned short s_status = eic.GetSysStatus();
+  if(s_status == 0xFFFF)
+  {
+    // turn Red LED on to signal bad status
+	while (1);
+  }
 }

@@ -28,10 +28,15 @@ import os
 import ssl
 
 mqttServer = os.getenv(envVars["MQTT_SERVER"])
+mqttPass = os.getenv(envVars["MQTT_PASS"])
 sslEnabled = os.getenv(envVars["SSL_ENABLED"])
-mqttPort = 1083
+mqttPort = 1883
 if sslEnabled != "enabled" or sslEnabled == None:
-  os.environ[envVars["MQTT_PORT"]] = "1083"
+  os.environ[envVars["MQTT_PORT"]] = "1883"
+else:
+  os.environ[envVars["MQTT_PORT"]] = "8883"
+  mqttPort = 8883
+   
    
 
 wifiSSID = os.getenv(envVars["WIFI_SSID"])
@@ -56,13 +61,14 @@ env.Append(CPPDEFINES=[
   ("TM_WIFI_PASSWD", wifiPasswd ),
   ("TM_MQTT_SERVER", mqttServer),
   ("TM_MQTT_PORT", mqttPort),
-  ("TM_MQTT_SVR", mqttServer)
+  ("TM_MQTT_SVR", mqttServer),
+  ("TM_MQTT_PASSWD", mqttPass)
 ])
 
 
 certStr = "const char* root_ca= \\\n"
 # get the SSL cert and write it to a file
-cert = ssl.get_server_certificate(('public.cloud.shiftr.io', 8883))
+cert = ssl.get_server_certificate((mqttServer, mqttPort))
 w = open("transformer_monitor_cert.pem", "w")
 w.writelines(cert.splitlines(True))
 w.close()
