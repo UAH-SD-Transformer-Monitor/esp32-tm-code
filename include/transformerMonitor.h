@@ -7,20 +7,23 @@
 #define ST(A) #A
 #define STR(A) ST(A)
 
+#ifdef TM_MQTT_SSL
+  #include <transformerMonitorServerCert.h>
+#endif
 #ifdef TM_WIFI_SSID
-   char const *ssid = STR(TM_WIFI_SSID);
+  char const *ssid = STR(TM_WIFI_SSID);
 #endif
 #ifdef TM_WIFI_PASSWD
-   char const *wifiPassword = STR(TM_WIFI_PASSWD);
+  char const *wifiPassword = STR(TM_WIFI_PASSWD);
 #endif
 #ifdef TM_MQTT_PORT
-   uint16_t mqttPort = (uint16_t) strtoul(STR(TM_MQTT_PORT), NULL, 10);
+  uint16_t mqttPort = (uint16_t) strtoul(STR(TM_MQTT_PORT), NULL, 10);
 #endif
 #ifdef TM_MQTT_SVR
-   char const  *mqttServer = STR(TM_MQTT_SVR);
+  char const  *mqttServer = STR(TM_MQTT_SVR);
 #endif
 #ifdef TM_MQTT_PASSWD
-   char const  *mqttPass = STR(TM_MQTT_PASSWD);
+  char const  *mqttPass = STR(TM_MQTT_PASSWD);
 #endif
 
 #define PIN_SerialATM_RX       16   //RX pin, CHANGE IT according to your board

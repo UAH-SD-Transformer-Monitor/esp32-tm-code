@@ -7,7 +7,6 @@
 */
 
 #include <transformerMonitor.h>
-#include <transformerMonitorServerCert.h>
 
 
 unsigned long lastMillis = 0;
@@ -55,8 +54,9 @@ void setup() {
   
   delay(100);
 
+#ifdef root_ca
   wifiClient.setCACert(root_ca);
-
+#endif
 }
 
 void messageReceived(String &topic, String &payload) {
@@ -108,6 +108,6 @@ void setupEnergyMonitor(){
   if(s_status == 0xFFFF)
   {
     // turn Red LED on to signal bad status
-	while (1);
+	  while (1);
   }
 }
