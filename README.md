@@ -13,22 +13,22 @@ You will need to change your upload port in `platformio.ini`.
 Add the env variables to a `.env` file before building it:
 
 ```sh
-TRANSFORMER_MON_WIFI_SSID=Your-WiFi-SSID
-TRANSFORMER_MON_WIFI_PASSWD=Your-WiFi-Password
+XFORMER_MON_WIFI_SSID=Your-WiFi-SSID
+XFORMER_MON_WIFI_PASSWD=Your-WiFi-Password
 
 # Your MQTT server
-TRANSFORMER_MON_MQTT_SERVER=xformer.utilitymonitor.io
+XFORMER_MON_MQTT_SERVER=xformer.utilitymonitor.io
 
-TRANSFORMER_MON_MQTT_USER=test
+XFORMER_MON_MQTT_USER=test
 
-TRANSFORMER_MON_MQTT_PASS=secure-mqtt-pass
+XFORMER_MON_MQTT_PASS=secure-mqtt-pass
 
-TRANSFORMER_MON_MQTT_ID=unique-id
+XFORMER_MON_MQTT_ID=unique-id
 
-TRANSFORMER_MON_MQTT_PORT="8883"
+XFORMER_MON_MQTT_PORT="8883"
 
 # Must be "enabled" if using SSL!
-TRANSFORMER_MON_USE_SSL="enabled"
+XFORMER_MON_USE_SSL="enabled"
 ```
 
 ## Development

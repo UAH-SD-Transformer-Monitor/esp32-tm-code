@@ -7,25 +7,36 @@
 #define ST(A) #A
 #define STR(A) ST(A)
 
+// include the cert if using SSL
 #ifdef TM_MQTT_SSL
   #include <transformerMonitorServerCert.h>
 #endif
+// extract the WiFi SSID from its macro
 #ifdef TM_WIFI_SSID
   char const *ssid = STR(TM_WIFI_SSID);
 #endif
+// extract the WiFi Password from its macro
 #ifdef TM_WIFI_PASSWD
   char const *wifiPassword = STR(TM_WIFI_PASSWD);
 #endif
+// extract the MQTT Port from its macro
 #ifdef TM_MQTT_PORT
   uint16_t mqttPort = (uint16_t) strtoul(STR(TM_MQTT_PORT), NULL, 10);
 #endif
+// extract the MQTT server hostname from its macro
 #ifdef TM_MQTT_SVR
   char const  *mqttServer = STR(TM_MQTT_SVR);
 #endif
+// extract the MQTT username from its macro
+#ifdef TM_MQTT_USER
+  char const  *mqttUser = STR(TM_MQTT_PASSWD);
+#endif
+// extract the MQTT password from its macro
 #ifdef TM_MQTT_PASSWD
   char const  *mqttPass = STR(TM_MQTT_PASSWD);
 #endif
 
+// pins for UART 2
 #define PIN_SerialATM_RX       16   //RX pin, CHANGE IT according to your board
 #define PIN_SerialATM_TX       17   //TX pin, CHANGE IT according to your board
 

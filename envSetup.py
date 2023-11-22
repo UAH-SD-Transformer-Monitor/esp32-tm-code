@@ -5,14 +5,14 @@ Import("env")
 # the keys must be defined in an .env file or the OS environment
 # key (can be anything): value (must be in the .env file or OS environment)
 envVars = {
-"WIFI_SSID": "TRANSFORMER_MON_WIFI_SSID",
-"WIFI_PASSWD": "TRANSFORMER_MON_WIFI_PASSWD",
-"SSL_ENABLED": "TRANSFORMER_MON_USE_SSL",
-"MQTT_PORT": "TRANSFORMER_MON_MQTT_PORT",
-"MQTT_SERVER": "TRANSFORMER_MON_MQTT_SERVER",
-"MQTT_USER": "TRANSFORMER_MON_MQTT_USER",
-"MQTT_ID": "TRANSFORMER_MON_MQTT_ID",
-"MQTT_PASS": "TRANSFORMER_MON_MQTT_PASS",
+"WIFI_SSID": "XFORMER_MON_WIFI_SSID",
+"WIFI_PASSWD": "XFORMER_MON_WIFI_PASSWD",
+"SSL_ENABLED": "XFORMER_MON_USE_SSL",
+"MQTT_PORT": "XFORMER_MON_MQTT_PORT",
+"MQTT_SERVER": "XFORMER_MON_MQTT_SERVER",
+"MQTT_USER": "XFORMER_MON_MQTT_USER",
+"MQTT_ID": "XFORMER_MON_MQTT_ID",
+"MQTT_PASS": "XFORMER_MON_MQTT_PASS",
 }
 
 try:
@@ -28,6 +28,7 @@ import os
 import ssl
 
 mqttServer = os.getenv(envVars["MQTT_SERVER"])
+mqttUser = os.getenv(envVars["MQTT_USER"])
 mqttPass = os.getenv(envVars["MQTT_PASS"])
 sslEnabled = os.getenv(envVars["SSL_ENABLED"]) == "enabled"
 mqttPort = 1883
@@ -59,10 +60,9 @@ if mqttServer == None:
 env.Append(CPPDEFINES=[
   ("TM_WIFI_SSID", wifiSSID ),
   ("TM_WIFI_PASSWD", wifiPasswd ),
-  ("TM_MQTT_SERVER", mqttServer),
   ("TM_MQTT_PORT", mqttPort),
   ("TM_MQTT_SVR", mqttServer),
-  ("TM_MQTT_SLL", sslEnabled),
+  ("TM_MQTT_USER", mqttUser),
   ("TM_MQTT_PASSWD", mqttPass)
 ])
 
