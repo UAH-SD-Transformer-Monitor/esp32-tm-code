@@ -6,11 +6,6 @@
 // Turn build flags (Macros) into strings
 #define ST(A) #A
 #define STR(A) ST(A)
-
-// include the cert if using SSL
-#ifdef TM_MQTT_SSL
-  #include <transformerMonitorServerCert.h>
-#endif
 // extract the WiFi SSID from its macro
 #ifdef TM_WIFI_SSID
   char const *ssid = STR(TM_WIFI_SSID);
@@ -34,6 +29,11 @@
 // extract the MQTT password from its macro
 #ifdef TM_MQTT_PASSWD
   char const  *mqttPass = STR(TM_MQTT_PASSWD);
+#endif
+
+// include the cert if using SSL
+#ifdef TM_MQTT_SSL
+  #include <transformerMonitorServerCert.h>
 #endif
 
 // pins for UART 2

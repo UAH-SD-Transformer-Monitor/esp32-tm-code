@@ -11,7 +11,7 @@
 
 unsigned long lastMillis = 0;
 
-void setupMQTTServer();
+void setupMQTTClient();
 
 void setupEnergyMonitor();
 
@@ -29,20 +29,21 @@ void connect() {
   while (WiFi.status() != WL_CONNECTED) {
     Serial.print(".");
     // wait 1 second for re-trying
-    delay(1000);
+    delay(3000);
   }
   Serial.print("Connected to ");
   Serial.println(ssid);
 
   Serial.print("\nconnecting...");
-  while (!mqttClient.connect("arduino", "public", mqttPass)) {
+  while (!mqttClient.connect("arduino", "test", "test")) {
     Serial.print(".");
+
     delay(1000);
   }
 
   Serial.println("\nconnected!");
 
-  mqttClient.subscribe("/transformer-mon");
+  // mqttClient.subscribe("/transformer-mon");
   
 }
 
@@ -54,9 +55,11 @@ void setup() {
   
   delay(100);
 
-#ifdef root_ca
+#ifdef TM_MQTT_SSL
   wifiClient.setCACert(root_ca);
 #endif
+
+  setupMQTTClient();
 }
 
 void messageReceived(String &topic, String &payload) {
@@ -91,9 +94,13 @@ void loop() {
 
 }
 
-void mqttServerSetup() {
+void setupMQTTClient() {
 
-mqttClient.setServer(mqttServer, mqttPort);
+  Serial.print("Setting MQTT server: ");
+  Serial.println(mqttServer);
+
+  mqttClient.setClient(wifiClient);
+  mqttClient.setServer(mqttServer, mqttPort);
 
 }
 

@@ -14,11 +14,16 @@ envVars = {
 "MQTT_ID": "XFORMER_MON_MQTT_ID",
 "MQTT_PASS": "XFORMER_MON_MQTT_PASS",
 }
-
+import socket
+import sys
 try:
     import dotenv
+    import OpenSSL
+    from OpenSSL import crypto
 except ImportError:
-    env.Execute("$PYTHONEXE -m pip install python-dotenv")
+    env.Execute("\"$PYTHONEXE\" -m pip install python-dotenv pyOpenSSL crypto")
+    from OpenSSL import crypto
+    import OpenSSL
     import dotenv
 
 
@@ -67,25 +72,47 @@ env.Append(CPPDEFINES=[
 ])
 
 if sslEnabled:
+  print("SSL enabled")
   env.Append(CPPDEFINES=[
-    ("TM_MQTT_SLL", sslEnabled)
+    ("TM_MQTT_SSL", sslEnabled)
   ])
   certStr = "const char* root_ca= \\\n"
   # get the SSL cert and write it to a file
   cert = ssl.get_server_certificate((mqttServer, mqttPort))
-  w = open("transformer_monitor_cert.pem", "w")
-  w.writelines(cert.splitlines(True))
-  w.close()
+  ctx = OpenSSL.SSL.Context(OpenSSL.SSL.SSLv23_METHOD)
+  s = socket.socket()
+  connection = OpenSSL.SSL.Connection(ctx, s)
+  connection.connect((mqttServer, mqttPort))
+  connection.setblocking(1)
+  connection.do_handshake()
+  chain = connection.get_peer_cert_chain()
+  
+  for index, cert in enumerate(chain):
+    cert_components = dict(cert.get_subject().get_components())
+    if(sys.version_info[0] >= 3):
+      cn = (cert_components.get(b'CN')).decode('utf-8')
+    else:
+      cn = cert_components.get('CN')
+    print('Centificate {0} - CN: {1}'.format(index, cn))
 
+    try:
+      temp_certname = '{0}_{1}.crt'.format("transformerMonitorServerCert", index)
+      with open(temp_certname, 'w+') as output_file:
+        if(sys.version_info[0] >= 3):
+          output_file.write((crypto.dump_certificate
+          (crypto.FILETYPE_PEM, cert).decode('utf-8')))
+        else:
+          output_file.write((crypto.dump_certificate(crypto.FILETYPE_PEM, cert)))
+    except IOError:
+      print('Exception:  {0}'.format(IOError.strerror))
   # transform the certificate to a multi-line C-string variable
-  with open("transformer_monitor_cert.pem", "r") as file:
+  with open("transformerMonitorServerCert_2.crt", "r") as file:
     for item in file:
       for i in item.splitlines():
         if i.startswith("-----END CERTIFICATE-----"):
           certStr += " \"" + str(i) + "\\n\""
         else:
           certStr += " \"" + str(i) + "\\n\"\\\n"
-
   certHeaderFile = open("include/transformerMonitorServerCert.h", "w")
   certHeaderFile.write(certStr)
   certHeaderFile.close()
