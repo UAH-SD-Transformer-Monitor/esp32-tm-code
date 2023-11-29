@@ -8,25 +8,25 @@
 
 #include <transformerMonitor.h>
 
-
 unsigned long lastMillis = 0;
 
 void setupMQTTClient();
 
 void setupEnergyMonitor();
 
-
 // You can use x.509 client certificates if you want
-//const char* test_client_key = "";   //to verify the client
-//const char* test_client_cert = "";  //to verify the client
+// const char* test_client_key = "";   //to verify the client
+// const char* test_client_cert = "";  //to verify the client
 
-void connect() {
-  Serial.print("Attempting to connect to SSID: "); 
+void connect()
+{
+  Serial.print("Attempting to connect to SSID: ");
   Serial.println(ssid);
   WiFi.begin(ssid, wifiPassword);
 
   // attempt to connect to Wifi network:
-  while (WiFi.status() != WL_CONNECTED) {
+  while (WiFi.status() != WL_CONNECTED)
+  {
     Serial.print(".");
     // wait 1 second for re-trying
     delay(3000);
@@ -35,86 +35,98 @@ void connect() {
   Serial.println(ssid);
 
   Serial.print("\nconnecting...");
-  while (!mqttClient.connect("arduino", "test", "test")) {
-    Serial.print(".");
 
-    delay(1000);
+  String client_id = "esp32-client-";
+  client_id += String(WiFi.macAddress());
+  Serial.printf("The client %s connects to the public mqtt broker\n", client_id.c_str());
+  if (mqttClient.connect(client_id.c_str(), mqttUser, mqttPass))
+  {
+  }
+  else
+  {
+    Serial.print("failed with state ");
+    Serial.print(mqttClient.state());
+    delay(2000);
   }
 
-  Serial.println("\nconnected!");
+    Serial.println("\nconnected!");
 
-  // mqttClient.subscribe("/transformer-mon");
-  
+    // mqttClient.subscribe("/transformer-mon");
 }
 
+  void setup()
+  {
+    // Initialize serial and wait for port to open:
+    Serial.begin(115200);
+    while (!Serial)
+    {
+    }
 
-void setup() {
-  //Initialize serial and wait for port to open:
-  Serial.begin(115200);
-  while (!Serial) {  }
-  
-  delay(100);
+    delay(100);
 
 #ifdef TM_MQTT_SSL
-  wifiClient.setCACert(root_ca);
+    wifiClient.setCACert(root_ca);
 #endif
 
-  setupMQTTClient();
-}
-
-void messageReceived(String &topic, String &payload) {
-  Serial.println("incoming: " + topic + " - " + payload);
-
-  // Note: Do not use the client in the callback to publish, subscribe or
-  // unsubscribe as it may cause deadlocks when other things arrive while
-  // sending and receiving acknowledgments. Instead, change a global variable,
-  // or push to a queue and handle it in the loop after calling `client.loop()`.
-}
-
-
-void loop() {
-  mqttClient.loop();
-  delay(10);  // <- fixes some issues with WiFi stability
-
-  if (!mqttClient.connected()) {
-    connect();
+    setupMQTTClient();
   }
 
-  // publish a message roughly every second.
-  if (millis() - lastMillis > 1000) {
-    lastMillis = millis();
-    float volts = eic.GetSysStatus();
-    StaticJsonDocument<256> doc;
-    doc["voltage"] = volts; 
-    char buffer[256];
-    serializeJson(doc, buffer);
-    mqttClient.publish("temp", buffer);
-  }
-
-
-}
-
-void setupMQTTClient() {
-
-  Serial.print("Setting MQTT server: ");
-  Serial.println(mqttServer);
-
-  mqttClient.setClient(wifiClient);
-  mqttClient.setServer(mqttServer, mqttPort);
-
-}
-
-void setupEnergyMonitor(){
-
-  //Must begin ATMSerial before IC init supplying baud rate, serial config, and RX TX pins
-  ATMSerial.begin(9600, SERIAL_8N1, PIN_SerialATM_RX, PIN_SerialATM_TX);
-  
-  eic.InitEnergyIC();
-  delay(1000);
-  unsigned short s_status = eic.GetSysStatus();
-  if(s_status == 0xFFFF)
+  void messageReceived(String & topic, String & payload)
   {
-    // turn Red LED on to signal bad status
-	  while (1);
+    Serial.println("incoming: " + topic + " - " + payload);
+
+    // Note: Do not use the client in the callback to publish, subscribe or
+    // unsubscribe as it may cause deadlocks when other things arrive while
+    // sending and receiving acknowledgments. Instead, change a global variable,
+    // or push to a queue and handle it in the loop after calling `client.loop()`.
   }
-}
+
+  void loop()
+  {
+    mqttClient.loop();
+    delay(10); // <- fixes some issues with WiFi stability
+
+    if (!mqttClient.connected())
+    {
+      connect();
+    }
+
+    // publish a message roughly every second.
+    if (millis() - lastMillis > 1000)
+    {
+      lastMillis = millis();
+      float volts = eic.GetSysStatus();
+      StaticJsonDocument<256> doc;
+      doc["voltage"] = volts;
+      char buffer[256];
+      serializeJson(doc, buffer);
+      mqttClient.publish("temp", buffer);
+    }
+  }
+
+  void setupMQTTClient()
+  {
+
+    Serial.print("Setting MQTT server: ");
+    Serial.println(mqttServer);
+
+    mqttClient.setClient(wifiClient);
+    mqttClient.setServer(mqttServer, mqttPort);
+  }
+
+  void setupEnergyMonitor()
+  {
+
+    // Must begin ATMSerial before IC init supplying baud rate, serial config, and RX TX pins
+    ATMSerial.begin(9600, SERIAL_8N1, PIN_SerialATM_RX, PIN_SerialATM_TX);
+
+    eic.InitEnergyIC();
+    delay(1000);
+    unsigned short s_status = eic.GetSysStatus();
+    if (s_status == 0xFFFF)
+    {
+      // turn Red LED on to signal bad status
+      while (1)
+        ;
+    }
+  }
