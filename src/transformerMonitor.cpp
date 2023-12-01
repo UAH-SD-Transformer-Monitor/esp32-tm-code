@@ -50,6 +50,9 @@ void connect()
   Serial.print("Connected to ");
   Serial.println(ssid);
 
+  Serial.print("Username: ");
+  Serial.println(mqttUser);
+
   Serial.print("\nconnecting...");
 
   String client_id = "esp32-client-";
@@ -111,6 +114,7 @@ void setupMQTTClient()
 
   mqttClient.setClient(wifiClient);
   mqttClient.setServer(mqttServer, mqttPort);
+
 }
 
 void setupEnergyMonitor()

@@ -24,7 +24,7 @@
 #endif
 // extract the MQTT username from its macro
 #ifdef TM_MQTT_USER
-  char const  *mqttUser = STR(TM_MQTT_PASSWD);
+  char const  *mqttUser = STR(TM_MQTT_USER);
 #endif
 // extract the MQTT password from its macro
 #ifdef TM_MQTT_PASSWD
