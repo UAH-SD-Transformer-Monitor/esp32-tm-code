@@ -92,18 +92,20 @@ void loop()
   {
     connect();
   }
+  
+  mqttClient.publish("temp", "buffer");
 
   // publish a message roughly every second.
-  if (millis() - lastMillis > 1000)
-  {
-    lastMillis = millis();
-    float volts = eic.GetSysStatus();
-    StaticJsonDocument<256> doc;
-    doc["voltage"] = volts;
-    char buffer[256];
-    serializeJson(doc, buffer);
-    mqttClient.publish("temp", buffer);
-  }
+  // if (millis() - lastMillis > 1000)
+  // {
+  //   lastMillis = millis();
+  //   float volts = eic.GetSysStatus();
+  //   StaticJsonDocument<256> doc;
+  //   doc["voltage"] = volts;
+  //   char buffer[256];
+  //   serializeJson(doc, buffer);
+  //   mqttClient.publish("temp", buffer);
+  // }
 }
 
 void setupMQTTClient()
