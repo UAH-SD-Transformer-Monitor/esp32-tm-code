@@ -10,8 +10,10 @@
 
 unsigned long lastMillis = 0;
 
+// function that sets up the MQTT client
 void setupMQTTClient();
 
+// function to set up and initialize the energy monitor
 void setupEnergyMonitor();
 
 // You can use x.509 client certificates if you want
@@ -36,6 +38,7 @@ void setup()
 
 void connect()
 {
+  // connect to the WiFi network
   Serial.print("Attempting to connect to SSID: ");
   Serial.println(ssid);
   WiFi.begin(ssid, wifiPassword);
@@ -55,6 +58,7 @@ void connect()
 
   Serial.print("\nconnecting...");
 
+  // we are using the ESP32's MAC address to provide a unique ID
   String client_id = "esp32-client-";
   client_id += String(WiFi.macAddress());
   Serial.printf("The client %s connects to the public mqtt broker\n", client_id.c_str());
@@ -122,6 +126,8 @@ void setupMQTTClient()
 void setupEnergyMonitor()
 {
 
+#ifdef ATM90E26_EIC
+
   // Must begin ATMSerial before IC init supplying baud rate, serial config, and RX TX pins
   ATMSerial.begin(9600, SERIAL_8N1, PIN_SerialATM_RX, PIN_SerialATM_TX);
 
@@ -134,4 +140,17 @@ void setupEnergyMonitor()
     while (1)
       ;
   }
+#else
+  /*
+  The ATM90E36 has to be setup via SPI.
+   SPI for the ESP32:
+    - MOSI: 23
+    - MISO: 19
+    - CLK: 18
+    - CS: 5
+  */
+  // use the over SPI ATM90E36
+  eic36.begin(15, 60, 1000, 1000, 1000,1000, 1000, 1000);
+
+#endif
 }
