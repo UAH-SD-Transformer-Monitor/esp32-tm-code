@@ -10,6 +10,9 @@
 
 unsigned long lastMillis = 0;
 
+// function to get the status of an Energy monitor
+unsigned short getEICSysStatus();
+
 // function that sets up the MQTT client
 void setupMQTTClient();
 
@@ -59,7 +62,6 @@ void connect()
   Serial.print("\nconnecting...");
 
   // we are using the ESP32's MAC address to provide a unique ID
-  String client_id = "esp32-client-";
   client_id += String(WiFi.macAddress());
   Serial.printf("The client %s connects to the public mqtt broker\n", client_id.c_str());
   if (mqttClient.connect(client_id.c_str(), mqttUser, mqttPass))
@@ -97,19 +99,19 @@ void loop()
     connect();
   }
   
-  mqttClient.publish("temp", "buffer");
+  mqttClient.publish("xfmormermon", "buffer");
 
   // publish a message roughly every second.
-  // if (millis() - lastMillis > 1000)
-  // {
-  //   lastMillis = millis();
-  //   float volts = eic.GetSysStatus();
-  //   StaticJsonDocument<256> doc;
-  //   doc["voltage"] = volts;
-  //   char buffer[256];
-  //   serializeJson(doc, buffer);
-  //   mqttClient.publish("temp", buffer);
-  // }
+  if (millis() - lastMillis > 1000)
+  {
+    lastMillis = millis();
+    unsigned short volts = getEICSysStatus();
+    StaticJsonDocument<256> doc;
+    doc["voltage"] = volts;
+    char buffer[256];
+    serializeJson(doc, buffer);
+    mqttClient.publish("xfomermon/", buffer);
+  }
 }
 
 void setupMQTTClient()
@@ -123,9 +125,11 @@ void setupMQTTClient()
 
 }
 
+// this function initializes the energy monitor
+// depending on which monitor is used, the function will have call different functions
 void setupEnergyMonitor()
 {
-
+  unsigned short s_status;
 #ifdef ATM90E26_EIC
 
   // Must begin ATMSerial before IC init supplying baud rate, serial config, and RX TX pins
@@ -133,13 +137,7 @@ void setupEnergyMonitor()
 
   eic.InitEnergyIC();
   delay(1000);
-  unsigned short s_status = eic.GetSysStatus();
-  if (s_status == 0xFFFF)
-  {
-    // turn Red LED on to signal bad status
-    while (1)
-      ;
-  }
+  s_status = eic.GetSysStatus();
 #else
   /*
   The ATM90E36 has to be setup via SPI.
@@ -149,8 +147,31 @@ void setupEnergyMonitor()
     - CLK: 18
     - CS: 5
   */
-  // use the over SPI ATM90E36
+  // use the ATM90E36 over SPI 
   eic36.begin(15, 60, 1000, 1000, 1000,1000, 1000, 1000);
+  s_status = eic36.GetSysStatus0();
 
 #endif
+  if (s_status == 0xFFFF)
+  {
+    // turn Red LED on to signal bad status
+    while (1)
+      ;
+  }
+
+}
+
+unsigned short getEICSysStatus() {
+  unsigned short s_status;
+#ifdef ATM90E26_EIC
+
+  s_status = eic.GetSysStatus();
+#else
+  /*
+    Get the system status for the ATM90E36
+  */
+  s_status = eic36.GetSysStatus0();
+#endif
+
+  return s_status;
 }

@@ -63,3 +63,6 @@ HardwareSerial ATMSerial(1);        //1 = just hardware serial number. ESP32 sup
 #else
   ATM90E36 eic36;
 #endif
+
+// we are using the ESP32's MAC address to provide a unique ID
+String client_id = "xformermon-";
