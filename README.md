@@ -57,7 +57,6 @@ build_src_filter =
     +<tests/[NameOfTest].cpp>
 ```
 
-# Setup
+## Setup
 
 Depending on which sensor is used, the board has to be set up differently.
-
