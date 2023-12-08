@@ -61,5 +61,6 @@ void loop() {
   freq=eic.GetFrequency();
   delay(10);
   Serial.println("f"+String(freq)+"Hz");
-  delay(1000);
+  Serial.println("Waiting 5s");
+  delay(5000);
 }

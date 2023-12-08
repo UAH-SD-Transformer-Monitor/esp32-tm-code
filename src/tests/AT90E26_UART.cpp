@@ -10,6 +10,8 @@ ATM90E26_UART eic(&ATMSerial);
 
 void setup() {
   Serial.begin(115200);
+  while (!Serial){}
+  
   Serial.println("\nATM90E26 UART Test Started");
   
 

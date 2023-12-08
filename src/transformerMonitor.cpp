@@ -104,14 +104,56 @@ void loop()
   // publish a message roughly every second.
   if (millis() - lastMillis > 1000)
   {
+
     lastMillis = millis();
-    unsigned short volts = getEICSysStatus();
+    // unsigned short volts = getEICSysStatus();
+    unsigned short volts = 121.2;
     StaticJsonDocument<256> doc;
     doc["voltage"] = volts;
     char buffer[256];
     serializeJson(doc, buffer);
     mqttClient.publish("xfomermon/", buffer);
   }
+
+    Serial.println("Good status");
+    unsigned short volts = 121.2;
+    unsigned short amps = 200;
+    unsigned short temperatureCab = 80;
+    unsigned short temperatureOil = 90;
+    Serial.print("Voltage: ");
+    Serial.println(volts);
+    Serial.print("Amps: ");
+    Serial.println(amps);
+    Serial.print("Temp of cabinet: ");
+    Serial.println(temperatureCab);
+    delay(10000);
+
+    Serial.println("Bad status");
+    volts = 200;
+    amps = 500;
+    temperatureCab = 80;
+    temperatureOil = 90;
+    Serial.print("Voltage: ");
+    Serial.println(volts);
+    Serial.print("Amps: ");
+    Serial.println(amps);
+    Serial.print("Temp of cabinet: ");
+    Serial.println(temperatureCab);
+    delay(10000);
+
+    Serial.println("Bad status");
+    volts = 2;
+    amps = 0;
+    temperatureCab = 80;
+    temperatureOil = 80;
+    Serial.print("Voltage: ");
+    Serial.println(volts);
+    Serial.print("Amps: ");
+    Serial.println(amps);
+    Serial.print("Temp of cabinet: ");
+    Serial.println(temperatureCab);
+    delay(10000);
+
 }
 
 void setupMQTTClient()
