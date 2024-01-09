@@ -2,6 +2,8 @@
 #include <PubSubClient.h>
 #include <SPI.h>
 #include <ArduinoJson.h>
+#include <OneWire.h>
+#include <DallasTemperature.h>
 #ifdef ATM90E26
   #include <energyic_UART.h>
 #else // we are using the ATM90E36
@@ -66,3 +68,26 @@ HardwareSerial ATMSerial(1);        //1 = just hardware serial number. ESP32 sup
 
 // we are using the ESP32's MAC address to provide a unique ID
 String client_id = "xformermon-";
+
+// GPIO where the DS18B20 is connected to
+const int oilTempBus = 4;
+const int cabinetTempBus = 9;
+
+
+// Setup a oneWire instance to communicate with any OneWire devices
+OneWire cabinetTempBusOneWire(cabinetTempBus);
+OneWire oilTempBusOneWire(oilTempBus);
+
+
+// Pass our oneWire reference to Dallas Temperature sensor 
+DallasTemperature cabinetTemp(&cabinetTempBusOneWire);
+DallasTemperature oilTemp(&oilTempBusOneWire);
+
+
+
+struct tempSensors {             // Structure declaration
+  DallasTemperature cabinet;   // Cabinet Temp (DallasTemperature variable)
+  DallasTemperature oil;   // Oil Temp (DallasTemperature variable)
+};
+
+tempSensors monitorTempSensors{cabinetTemp, oilTemp};

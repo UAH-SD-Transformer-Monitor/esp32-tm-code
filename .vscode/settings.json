@@ -4,5 +4,6 @@
         "**/.frontmatter/config/*.json": "jsonc",
         "functional": "cpp",
         "string": "cpp"
-    }
+    },
+    "julia.environmentPath": "/home/andrew/Projects/SeniorDesign/esp32-tm-code"
 }

@@ -29,12 +29,16 @@ void setup()
   while (!Serial)
   {
   }
-  
+
   delay(1000);
 
 #ifdef TM_MQTT_SSL
   wifiClient.setCACert(root_ca);
 #endif
+
+  // Start the DS18B20 sensor
+  monitorTempSensors.cabinet.begin();
+  monitorTempSensors.oil.begin();
 
   setupMQTTClient();
 }
@@ -106,10 +110,15 @@ void loop()
   {
 
     lastMillis = millis();
+    monitorTempSensors.cabinet.requestTemperatures();
     // unsigned short volts = getEICSysStatus();
     unsigned short volts = 121.2;
+    float cabinetTemperatureC = monitorTempSensors.cabinet.getTempCByIndex(0);
+    float cabinetTemperatureF = monitorTempSensors.cabinet.getTempFByIndex(0);
     StaticJsonDocument<256> doc;
     doc["voltage"] = volts;
+    doc["cabinetTempF"] = cabinetTemperatureF;
+    doc["cabinetTempC"] = cabinetTemperatureC;
     char buffer[256];
     serializeJson(doc, buffer);
     mqttClient.publish("xfomermon/", buffer);
