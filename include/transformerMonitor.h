@@ -1,14 +1,10 @@
 #include <WiFiClientSecure.h>
 #include <PubSubClient.h>
-#include <SPI.h>
 #include <ArduinoJson.h>
 #include <OneWire.h>
 #include <DallasTemperature.h>
-#ifdef ATM90E26
-  #include <energyic_UART.h>
-#else // we are using the ATM90E36
-  #include <ATM90E36.h>
-#endif
+
+
 
 // Turn build flags (Macros) into strings
 #define ST(A) #A
@@ -58,12 +54,17 @@ PubSubClient mqttClient;
 
 
 
-HardwareSerial ATMSerial(1);        //1 = just hardware serial number. ESP32 supports 3 hardware serials. UART 0 usually for flashing.
+// HardwareSerial ATMSerial(1);        //1 = just hardware serial number. ESP32 supports 3 hardware serials. UART 0 usually for flashing.
 
 #ifdef ATM90E26_EIC
-  ATM90E26_UART eic(&ATMSerial);
+#include <ATM90E26_IC.h>
+  
+ATM90E26_IC eic;
+
 #else
-  ATM90E36 eic36;
+#include <ATM90E36_IC.h>
+ATM90E36_IC eic;
+
 #endif
 
 // we are using the ESP32's MAC address to provide a unique ID
@@ -91,3 +92,5 @@ struct tempSensors {             // Structure declaration
 };
 
 tempSensors monitorTempSensors{cabinetTemp, oilTemp};
+
+StaticJsonDocument<256> dataStore[60];

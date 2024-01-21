@@ -1,17 +1,10 @@
 /*
-  Wifi secure connection example for ESP32
-  Running on TLS 1.2 using mbedTLS
-  Supporting the following chipersuites:
-  "TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384","TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384","TLS_DHE_RSA_WITH_AES_256_GCM_SHA384","TLS_ECDHE_ECDSA_WITH_AES_256_CCM","TLS_DHE_RSA_WITH_AES_256_CCM","TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA384","TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA384","TLS_DHE_RSA_WITH_AES_256_CBC_SHA256","TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA","TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA","TLS_DHE_RSA_WITH_AES_256_CBC_SHA","TLS_ECDHE_ECDSA_WITH_AES_256_CCM_8","TLS_DHE_RSA_WITH_AES_256_CCM_8","TLS_ECDHE_ECDSA_WITH_CAMELLIA_256_GCM_SHA384","TLS_ECDHE_RSA_WITH_CAMELLIA_256_GCM_SHA384","TLS_DHE_RSA_WITH_CAMELLIA_256_GCM_SHA384","TLS_ECDHE_ECDSA_WITH_CAMELLIA_256_CBC_SHA384","TLS_ECDHE_RSA_WITH_CAMELLIA_256_CBC_SHA384","TLS_DHE_RSA_WITH_CAMELLIA_256_CBC_SHA256","TLS_DHE_RSA_WITH_CAMELLIA_256_CBC_SHA","TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256","TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256","TLS_DHE_RSA_WITH_AES_128_GCM_SHA256","TLS_ECDHE_ECDSA_WITH_AES_128_CCM","TLS_DHE_RSA_WITH_AES_128_CCM","TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA256","TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA256","TLS_DHE_RSA_WITH_AES_128_CBC_SHA256","TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA","TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA","TLS_DHE_RSA_WITH_AES_128_CBC_SHA","TLS_ECDHE_ECDSA_WITH_AES_128_CCM_8","TLS_DHE_RSA_WITH_AES_128_CCM_8","TLS_ECDHE_ECDSA_WITH_CAMELLIA_128_GCM_SHA256","TLS_ECDHE_RSA_WITH_CAMELLIA_128_GCM_SHA256","TLS_DHE_RSA_WITH_CAMELLIA_128_GCM_SHA256","TLS_ECDHE_ECDSA_WITH_CAMELLIA_128_CBC_SHA256","TLS_ECDHE_RSA_WITH_CAMELLIA_128_CBC_SHA256","TLS_DHE_RSA_WITH_CAMELLIA_128_CBC_SHA256","TLS_DHE_RSA_WITH_CAMELLIA_128_CBC_SHA","TLS_ECDHE_ECDSA_WITH_3DES_EDE_CBC_SHA","TLS_ECDHE_RSA_WITH_3DES_EDE_CBC_SHA","TLS_DHE_RSA_WITH_3DES_EDE_CBC_SHA","TLS_DHE_PSK_WITH_AES_256_GCM_SHA384","TLS_DHE_PSK_WITH_AES_256_CCM","TLS_ECDHE_PSK_WITH_AES_256_CBC_SHA384","TLS_DHE_PSK_WITH_AES_256_CBC_SHA384","TLS_ECDHE_PSK_WITH_AES_256_CBC_SHA","TLS_DHE_PSK_WITH_AES_256_CBC_SHA","TLS_DHE_PSK_WITH_CAMELLIA_256_GCM_SHA384","TLS_ECDHE_PSK_WITH_CAMELLIA_256_CBC_SHA384","TLS_DHE_PSK_WITH_CAMELLIA_256_CBC_SHA384","TLS_PSK_DHE_WITH_AES_256_CCM_8","TLS_DHE_PSK_WITH_AES_128_GCM_SHA256","TLS_DHE_PSK_WITH_AES_128_CCM","TLS_ECDHE_PSK_WITH_AES_128_CBC_SHA256","TLS_DHE_PSK_WITH_AES_128_CBC_SHA256","TLS_ECDHE_PSK_WITH_AES_128_CBC_SHA","TLS_DHE_PSK_WITH_AES_128_CBC_SHA","TLS_DHE_PSK_WITH_CAMELLIA_128_GCM_SHA256","TLS_DHE_PSK_WITH_CAMELLIA_128_CBC_SHA256","TLS_ECDHE_PSK_WITH_CAMELLIA_128_CBC_SHA256","TLS_PSK_DHE_WITH_AES_128_CCM_8","TLS_ECDHE_PSK_WITH_3DES_EDE_CBC_SHA","TLS_DHE_PSK_WITH_3DES_EDE_CBC_SHA","TLS_RSA_WITH_AES_256_GCM_SHA384","TLS_RSA_WITH_AES_256_CCM","TLS_RSA_WITH_AES_256_CBC_SHA256","TLS_RSA_WITH_AES_256_CBC_SHA","TLS_ECDH_RSA_WITH_AES_256_GCM_SHA384","TLS_ECDH_RSA_WITH_AES_256_CBC_SHA384","TLS_ECDH_RSA_WITH_AES_256_CBC_SHA","TLS_ECDH_ECDSA_WITH_AES_256_GCM_SHA384","TLS_ECDH_ECDSA_WITH_AES_256_CBC_SHA384","TLS_ECDH_ECDSA_WITH_AES_256_CBC_SHA","TLS_RSA_WITH_AES_256_CCM_8","TLS_RSA_WITH_CAMELLIA_256_GCM_SHA384","TLS_RSA_WITH_CAMELLIA_256_CBC_SHA256","TLS_RSA_WITH_CAMELLIA_256_CBC_SHA","TLS_ECDH_RSA_WITH_CAMELLIA_256_GCM_SHA384","TLS_ECDH_RSA_WITH_CAMELLIA_256_CBC_SHA384","TLS_ECDH_ECDSA_WITH_CAMELLIA_256_GCM_SHA384","TLS_ECDH_ECDSA_WITH_CAMELLIA_256_CBC_SHA384","TLS_RSA_WITH_AES_128_GCM_SHA256","TLS_RSA_WITH_AES_128_CCM","TLS_RSA_WITH_AES_128_CBC_SHA256","TLS_RSA_WITH_AES_128_CBC_SHA","TLS_ECDH_RSA_WITH_AES_128_GCM_SHA256","TLS_ECDH_RSA_WITH_AES_128_CBC_SHA256","TLS_ECDH_RSA_WITH_AES_128_CBC_SHA","TLS_ECDH_ECDSA_WITH_AES_128_GCM_SHA256","TLS_ECDH_ECDSA_WITH_AES_128_CBC_SHA256","TLS_ECDH_ECDSA_WITH_AES_128_CBC_SHA","TLS_RSA_WITH_AES_128_CCM_8","TLS_RSA_WITH_CAMELLIA_128_GCM_SHA256","TLS_RSA_WITH_CAMELLIA_128_CBC_SHA256","TLS_RSA_WITH_CAMELLIA_128_CBC_SHA","TLS_ECDH_RSA_WITH_CAMELLIA_128_GCM_SHA256","TLS_ECDH_RSA_WITH_CAMELLIA_128_CBC_SHA256","TLS_ECDH_ECDSA_WITH_CAMELLIA_128_GCM_SHA256","TLS_ECDH_ECDSA_WITH_CAMELLIA_128_CBC_SHA256","TLS_RSA_WITH_3DES_EDE_CBC_SHA","TLS_ECDH_RSA_WITH_3DES_EDE_CBC_SHA","TLS_ECDH_ECDSA_WITH_3DES_EDE_CBC_SHA","TLS_RSA_PSK_WITH_AES_256_GCM_SHA384","TLS_RSA_PSK_WITH_AES_256_CBC_SHA384","TLS_RSA_PSK_WITH_AES_256_CBC_SHA","TLS_RSA_PSK_WITH_CAMELLIA_256_GCM_SHA384","TLS_RSA_PSK_WITH_CAMELLIA_256_CBC_SHA384","TLS_RSA_PSK_WITH_AES_128_GCM_SHA256","TLS_RSA_PSK_WITH_AES_128_CBC_SHA256","TLS_RSA_PSK_WITH_AES_128_CBC_SHA","TLS_RSA_PSK_WITH_CAMELLIA_128_GCM_SHA256","TLS_RSA_PSK_WITH_CAMELLIA_128_CBC_SHA256","TLS_RSA_PSK_WITH_3DES_EDE_CBC_SHA","TLS_PSK_WITH_AES_256_GCM_SHA384","TLS_PSK_WITH_AES_256_CCM","TLS_PSK_WITH_AES_256_CBC_SHA384","TLS_PSK_WITH_AES_256_CBC_SHA","TLS_PSK_WITH_CAMELLIA_256_GCM_SHA384","TLS_PSK_WITH_CAMELLIA_256_CBC_SHA384","TLS_PSK_WITH_AES_256_CCM_8","TLS_PSK_WITH_AES_128_GCM_SHA256","TLS_PSK_WITH_AES_128_CCM","TLS_PSK_WITH_AES_128_CBC_SHA256","TLS_PSK_WITH_AES_128_CBC_SHA","TLS_PSK_WITH_CAMELLIA_128_GCM_SHA256","TLS_PSK_WITH_CAMELLIA_128_CBC_SHA256","TLS_PSK_WITH_AES_128_CCM_8","TLS_PSK_WITH_3DES_EDE_CBC_SHA","TLS_EMPTY_RENEGOTIATION_INFO_SCSV"]
-  2017 - Evandro Copercini - Apache 2.0 License.
+  Transformer monitor project
 */
 
 #include <transformerMonitor.h>
 
 unsigned long lastMillis = 0;
-
-// function to get the status of an Energy monitor
-unsigned short getEICSysStatus();
 
 // function that sets up the MQTT client
 void setupMQTTClient();
@@ -24,6 +17,13 @@ void setupEnergyMonitor();
 // const char* test_client_cert = "";  //to verify the client
 void setup()
 {
+
+  // configure time
+  // TODO: make dst and timezone configurable
+  int timezone = 3;
+  int dst = 0;
+  configTime(timezone * 3600, dst * 0, "pool.ntp.org", "time.nist.gov");
+
   // Initialize serial and wait for port to open:
   Serial.begin(115200);
   while (!Serial)
@@ -36,7 +36,7 @@ void setup()
   wifiClient.setCACert(root_ca);
 #endif
 
-  // Start the DS18B20 sensor
+  // Start the DS18B20 sensors
   monitorTempSensors.cabinet.begin();
   monitorTempSensors.oil.begin();
 
@@ -102,7 +102,7 @@ void loop()
   {
     connect();
   }
-  
+
   mqttClient.publish("xfmormermon", "buffer");
 
   // publish a message roughly every second.
@@ -113,56 +113,32 @@ void loop()
     monitorTempSensors.cabinet.requestTemperatures();
     // unsigned short volts = getEICSysStatus();
     unsigned short volts = 121.2;
+    double meterStatus = eic.GetLineVoltage();
     float cabinetTemperatureC = monitorTempSensors.cabinet.getTempCByIndex(0);
     float cabinetTemperatureF = monitorTempSensors.cabinet.getTempFByIndex(0);
     StaticJsonDocument<256> doc;
+    // Get the current time and store it in a variable
+    time_t now;
+    time(&now);
+    struct tm* timeinfo = gmtime(&now);
+
+    char timeBuffer[32];
+    strftime(timeBuffer, sizeof(timeBuffer), "%FT%TZ", timeinfo);
+    // set {"time":"2021-05-04T13:13:04Z"}
+    doc["time"] = timeBuffer;
+    doc["meterStatus"] = eic.GetLineVoltage();
     doc["voltage"] = volts;
-    doc["cabinetTempF"] = cabinetTemperatureF;
-    doc["cabinetTempC"] = cabinetTemperatureC;
-    char buffer[256];
-    serializeJson(doc, buffer);
-    mqttClient.publish("xfomermon/", buffer);
+    JsonObject temp = doc.createNestedObject("temps");
+    temp["cabinet"] = monitorTempSensors.cabinet.getTempCByIndex(0);
+    temp["oil"] = monitorTempSensors.oil.getTempCByIndex(0);
+
+    dataStore->add(doc);
+
+    char mqttBuffer[256];
+
+    serializeJson(doc, mqttBuffer);
+    mqttClient.publish("xfomermon/", mqttBuffer);
   }
-
-    Serial.println("Good status");
-    unsigned short volts = 121.2;
-    unsigned short amps = 200;
-    unsigned short temperatureCab = 80;
-    unsigned short temperatureOil = 90;
-    Serial.print("Voltage: ");
-    Serial.println(volts);
-    Serial.print("Amps: ");
-    Serial.println(amps);
-    Serial.print("Temp of cabinet: ");
-    Serial.println(temperatureCab);
-    delay(10000);
-
-    Serial.println("Bad status");
-    volts = 200;
-    amps = 500;
-    temperatureCab = 80;
-    temperatureOil = 90;
-    Serial.print("Voltage: ");
-    Serial.println(volts);
-    Serial.print("Amps: ");
-    Serial.println(amps);
-    Serial.print("Temp of cabinet: ");
-    Serial.println(temperatureCab);
-    delay(10000);
-
-    Serial.println("Bad status");
-    volts = 2;
-    amps = 0;
-    temperatureCab = 80;
-    temperatureOil = 80;
-    Serial.print("Voltage: ");
-    Serial.println(volts);
-    Serial.print("Amps: ");
-    Serial.println(amps);
-    Serial.print("Temp of cabinet: ");
-    Serial.println(temperatureCab);
-    delay(10000);
-
 }
 
 void setupMQTTClient()
@@ -173,56 +149,10 @@ void setupMQTTClient()
 
   mqttClient.setClient(wifiClient);
   mqttClient.setServer(mqttServer, mqttPort);
-
 }
 
 // this function initializes the energy monitor
 // depending on which monitor is used, the function will have call different functions
 void setupEnergyMonitor()
 {
-  unsigned short s_status;
-#ifdef ATM90E26_EIC
-
-  // Must begin ATMSerial before IC init supplying baud rate, serial config, and RX TX pins
-  ATMSerial.begin(9600, SERIAL_8N1, PIN_SerialATM_RX, PIN_SerialATM_TX);
-
-  eic.InitEnergyIC();
-  delay(1000);
-  s_status = eic.GetSysStatus();
-#else
-  /*
-  The ATM90E36 has to be setup via SPI.
-   SPI for the ESP32:
-    - MOSI: 23
-    - MISO: 19
-    - CLK: 18
-    - CS: 5
-  */
-  // use the ATM90E36 over SPI 
-  eic36.begin(15, 60, 1000, 1000, 1000,1000, 1000, 1000);
-  s_status = eic36.GetSysStatus0();
-
-#endif
-  if (s_status == 0xFFFF)
-  {
-    // turn Red LED on to signal bad status
-    while (1)
-      ;
-  }
-
-}
-
-unsigned short getEICSysStatus() {
-  unsigned short s_status;
-#ifdef ATM90E26_EIC
-
-  s_status = eic.GetSysStatus();
-#else
-  /*
-    Get the system status for the ATM90E36
-  */
-  s_status = eic36.GetSysStatus0();
-#endif
-
-  return s_status;
 }

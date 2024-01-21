@@ -3,7 +3,17 @@
         "**/frontmatter.json": "jsonc",
         "**/.frontmatter/config/*.json": "jsonc",
         "functional": "cpp",
-        "string": "cpp"
+        "string": "cpp",
+        "array": "cpp",
+        "deque": "cpp",
+        "unordered_map": "cpp",
+        "unordered_set": "cpp",
+        "vector": "cpp",
+        "string_view": "cpp",
+        "initializer_list": "cpp",
+        "type_traits": "cpp",
+        "new": "cpp",
+        "ctime": "cpp"
     },
     "julia.environmentPath": "/home/andrew/Projects/SeniorDesign/esp32-tm-code"
 }

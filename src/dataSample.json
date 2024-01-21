@@ -1,0 +1,11 @@
+{
+    "time": "2021-05-04T13:13:04Z",
+    "volts": 120.00,
+    "amps": 600,
+    "meterStatus": 60,
+    "id": "xformermon-ae:94:df:2e:7a:d8",
+    "temps": {
+        "oil": 70.0,
+        "cabinet": 60.0
+    }
+}
