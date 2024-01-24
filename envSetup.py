@@ -11,9 +11,12 @@ envVars = {
 "MQTT_PORT": "XFORMER_MON_MQTT_PORT",
 "MQTT_SERVER": "XFORMER_MON_MQTT_SERVER",
 "MQTT_USER": "XFORMER_MON_MQTT_USER",
-"MQTT_ID": "XFORMER_MON_MQTT_ID",
 "MQTT_PASS": "XFORMER_MON_MQTT_PASS",
+"MQTT_ID": "XFORMER_MON_MQTT_ID",
+"TM_CT": "XFORMER_MON_CT_LINE", # if not set, will default to 'A' in code
 }
+
+
 import socket
 import sys
 try:
@@ -35,6 +38,7 @@ import ssl
 mqttServer = os.getenv(envVars["MQTT_SERVER"])
 mqttUser = os.getenv(envVars["MQTT_USER"])
 mqttPass = os.getenv(envVars["MQTT_PASS"])
+transformerCT = os.getenv(envVars["TM_CT"])
 sslEnabled = os.getenv(envVars["SSL_ENABLED"]) == "enabled"
 mqttPort = 1883
 if not sslEnabled:
@@ -68,7 +72,8 @@ env.Append(CPPDEFINES=[
   ("TM_MQTT_PORT", mqttPort),
   ("TM_MQTT_SVR", mqttServer),
   ("TM_MQTT_USER", mqttUser),
-  ("TM_MQTT_PASSWD", mqttPass)
+  ("TM_MQTT_PASSWD", mqttPass),
+  ("TM_MQTT_CT", transformerCT)
 ])
 
 if sslEnabled:

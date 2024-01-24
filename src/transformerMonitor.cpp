@@ -106,16 +106,16 @@ void loop()
   mqttClient.publish("xfmormermon", "buffer");
 
   // publish a message roughly every second.
-  if (millis() - lastMillis > 1000)
-  {
+  // if (millis() - lastMillis > 1000)
+  // {
 
     lastMillis = millis();
     monitorTempSensors.cabinet.requestTemperatures();
+    monitorTempSensors.oil.requestTemperatures();
     // unsigned short volts = getEICSysStatus();
     unsigned short volts = 121.2;
-    double meterStatus = eic.GetLineVoltage();
-    float cabinetTemperatureC = monitorTempSensors.cabinet.getTempCByIndex(0);
-    float cabinetTemperatureF = monitorTempSensors.cabinet.getTempFByIndex(0);
+    // float cabinetTemperatureC = monitorTempSensors.cabinet.getTempCByIndex(0);
+    // float cabinetTemperatureF = monitorTempSensors.cabinet.getTempFByIndex(0);
     StaticJsonDocument<256> doc;
     // Get the current time and store it in a variable
     time_t now;
@@ -138,7 +138,9 @@ void loop()
 
     serializeJson(doc, mqttBuffer);
     mqttClient.publish("xfomermon/", mqttBuffer);
-  }
+  // }
+  Serial.println("Sleeping 10s");
+  delay(10000);
 }
 
 void setupMQTTClient()

@@ -17,13 +17,25 @@ ATM90E36 eic;
 
 void setup() {
   /* Initialize the serial port to host */
+  /*
+  The ATM90E36 has to be setup via SPI.
+   SPI for the ESP32:
+    - CLK: 18
+    - MISO: 19
+    - MOSI: 23
+    - CS: 5
+  */
+  SPI.begin(SCK, MISO, MOSI, SS);
+  delay(2000);
   Serial.begin(115200);
   while (!Serial) {
     ; // wait for serial port to connect. Needed for native USB
   }
+
   Serial.println("Start ATM90E36");
   /*Initialise the ATM90E36 + SPI port */
-  eic.begin(15, 60, 1000, 1000, 1000,1000, 1000, 1000);
+  // ss pin is the first parameter
+  eic.begin(5, 60, 100, 100, 100,100, 100, 100);
   delay(1000);
 }
 
