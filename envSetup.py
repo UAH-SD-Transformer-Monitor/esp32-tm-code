@@ -2,8 +2,8 @@ Import("env")
 
 # dictionary of environment variable names with the names as the values
 # the keys may be the same as the values
-# the keys must be defined in an .env file or the OS environment
-# key (can be anything): value (must be in the .env file or OS environment)
+# the values must be defined in an .env file or the OS environment
+# key (can be anything) : value (must be in the .env file or OS environment)
 envVars = {
 "WIFI_SSID": "XFORMER_MON_WIFI_SSID",
 "WIFI_PASSWD": "XFORMER_MON_WIFI_PASSWD",
@@ -13,28 +13,29 @@ envVars = {
 "MQTT_USER": "XFORMER_MON_MQTT_USER",
 "MQTT_PASS": "XFORMER_MON_MQTT_PASS",
 "MQTT_ID": "XFORMER_MON_MQTT_ID",
-"TM_CT": "XFORMER_MON_CT_LINE", # if not set, will default to 'A' in code
+"TM_CT": "XFORMER_MON_LINE", # if not set, will default to 'A' in code
 }
 
 
 import socket
 import sys
 try:
-    import dotenv
+    import yaml
     import OpenSSL
     from OpenSSL import crypto
 except ImportError:
-    env.Execute("\"$PYTHONEXE\" -m pip install python-dotenv pyOpenSSL crypto")
-    from OpenSSL import crypto
+    env.Execute("\"$PYTHONEXE\" -m pip install python-dotenv pyOpenSSL crypto pyyaml")
+    import yaml
     import OpenSSL
-    import dotenv
+    from OpenSSL import crypto
 
 
-dotenv.load_dotenv()
-
+with open('config.yml', 'r') as file:
+  monitorConfigFile = yaml.safe_load(file)
 import os
 import ssl
 
+wifiConfig = monitorConfigFile["wifi"]
 mqttServer = os.getenv(envVars["MQTT_SERVER"])
 mqttUser = os.getenv(envVars["MQTT_USER"])
 mqttPass = os.getenv(envVars["MQTT_PASS"])

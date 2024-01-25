@@ -106,8 +106,8 @@ void loop()
   mqttClient.publish("xfmormermon", "buffer");
 
   // publish a message roughly every second.
-  // if (millis() - lastMillis > 1000)
-  // {
+  if (millis() - lastMillis > 1000)
+  {
 
     lastMillis = millis();
     monitorTempSensors.cabinet.requestTemperatures();
@@ -138,7 +138,7 @@ void loop()
 
     serializeJson(doc, mqttBuffer);
     mqttClient.publish("xfomermon/", mqttBuffer);
-  // }
+  }
   Serial.println("Sleeping 10s");
   delay(10000);
 }
