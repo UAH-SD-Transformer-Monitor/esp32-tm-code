@@ -27,9 +27,9 @@ void setup()
 
   // Initialize serial and wait for port to open:
   Serial.begin(115200);
-  // while (!Serial)
-  // {
-  // }
+  while (!Serial)
+  {
+  }
 
   delay(20000);
 
