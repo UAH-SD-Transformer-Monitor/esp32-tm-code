@@ -4,11 +4,11 @@ ssl:
 wifi:
   # Your WiFi SSID
   ssid: "Your-WiFi-SSID"
-      # Your WiFi Password
-  passwd: Your-WiFi-Password
+  # Your WiFi Password
+  passwd: Your-Secret-WiFi-Password
 mqtt:
   # Your MQTT server
-  server: xformer.utilitymonitor.io
+  server: your.mqtt-broker.tld
   # The port the MQTT server is running on
   port: 8883
   # Your MQTT User
@@ -17,12 +17,20 @@ mqtt:
   password: secure-mqtt-pass
   # A unique ID
   id: unique-id
-
-
-# Only for the ATM90E36 board
-# determines which line to read
-# Determines which voltage needs to be set.
-XFORMER_MON_LINE='A'
-
-# To be set later:
-XFORMER_MON_LINE='A'
+sensor:
+  type: ATM90E36
+  config:
+    # voltage rms gain in hex. See docs/Gains.md for more information
+    ugain: 0x
+    # Voltage gain for CTs
+    lgain: 0x
+    # Voltage gain for neutral line
+    ngain: 0x
+    # power freqency
+    lfreq: 0x
+    # PGA Gain for current channels
+    pgagain: 0x
+    # Only for the ATM90E36 board
+    # determines which line to read
+    # Determines which voltage needs to be set.
+    line: "A"

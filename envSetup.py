@@ -1,21 +1,5 @@
 Import("env")
 
-# dictionary of environment variable names with the names as the values
-# the keys may be the same as the values
-# the values must be defined in an .env file or the OS environment
-# key (can be anything) : value (must be in the .env file or OS environment)
-envVars = {
-"WIFI_SSID": "XFORMER_MON_WIFI_SSID",
-"WIFI_PASSWD": "XFORMER_MON_WIFI_PASSWD",
-"SSL_ENABLED": "XFORMER_MON_USE_SSL",
-"MQTT_PORT": "XFORMER_MON_MQTT_PORT",
-"MQTT_SERVER": "XFORMER_MON_MQTT_SERVER",
-"MQTT_USER": "XFORMER_MON_MQTT_USER",
-"MQTT_PASS": "XFORMER_MON_MQTT_PASS",
-"MQTT_ID": "XFORMER_MON_MQTT_ID",
-"TM_CT": "XFORMER_MON_LINE", # if not set, will default to 'A' in code
-}
-
 
 import socket
 import sys
@@ -35,46 +19,42 @@ with open('config.yml', 'r') as file:
 import os
 import ssl
 
-wifiConfig = monitorConfigFile["wifi"]
-mqttServer = os.getenv(envVars["MQTT_SERVER"])
-mqttUser = os.getenv(envVars["MQTT_USER"])
-mqttPass = os.getenv(envVars["MQTT_PASS"])
-transformerCT = os.getenv(envVars["TM_CT"])
-sslEnabled = os.getenv(envVars["SSL_ENABLED"]) == "enabled"
-mqttPort = 1883
+wifiConfig = monitorConfigFile.get("wifi")
+mqttConfig = monitorConfigFile.get("mqtt")
+
+mqttServer = mqttConfig.get("server")
+mqttPort = mqttConfig.get("port")
+sensorConfig = monitorConfigFile.get("sensor")
+
+transformerLine = sensorConfig['config']['line'] 
+sslEnabled = monitorConfigFile["ssl"]['enabled']
 if not sslEnabled:
-  os.environ[envVars["MQTT_PORT"]] = "1883"
+  mqttConfig["port"] = 1883
 else:
-  os.environ[envVars["MQTT_PORT"]] = "8883"
-  mqttPort = 8883
-   
-   
-
-wifiSSID = os.getenv(envVars["WIFI_SSID"])
-wifiPasswd = os.getenv(envVars["WIFI_PASSWD"])
+  mqttConfig["port"] = 8883
 
 
 
-if wifiSSID == None:
-    print(f"Environment variable {envVars['WIFI_SSID']} variable not defined. Define it in a .env file at the root of the project.")
+if wifiConfig.get("ssid") == None:
+    print(f"wifi object variable SSID not defined. Define it in the config.yml file at the root of the project.")
     os._exit(1)
 
-if wifiPasswd == None:
-    print(f"Environment variable {envVars['WIFI_PASSWD']} variable not defined. Define it in a .env file at the root of the project.")
+if wifiConfig["password"] == None:
+    print(f"wifi object variable password not defined. Define it in the config.yml file at the root of the project.")
     os._exit(1)
-if mqttServer == None:
-    print(f"Environment variable {envVars['MQTT_SERVER']} variable not defined. Define it in a .env file at the root of the project.")
+if mqttConfig["server"] == None:
+    print(f"mqtt object variable server not defined. Define it in the config.yml file at the root of the project.")
     os._exit(1)
 
 
 env.Append(CPPDEFINES=[
-  ("TM_WIFI_SSID", wifiSSID ),
-  ("TM_WIFI_PASSWD", wifiPasswd ),
-  ("TM_MQTT_PORT", mqttPort),
-  ("TM_MQTT_SVR", mqttServer),
-  ("TM_MQTT_USER", mqttUser),
-  ("TM_MQTT_PASSWD", mqttPass),
-  ("TM_MQTT_CT", transformerCT)
+  ("TM_WIFI_SSID", wifiConfig.get('ssid')),
+  ("TM_WIFI_PASSWD", wifiConfig.get('password') ),
+  ("TM_MQTT_PORT", mqttConfig.get('port')),
+  ("TM_MQTT_SVR", mqttConfig.get("server")),
+  ("TM_MQTT_USER", mqttConfig.get("user")),
+  ("TM_MQTT_PASSWD", mqttConfig.get("password")),
+  ("TM_CT", transformerLine)
 ])
 
 if sslEnabled:

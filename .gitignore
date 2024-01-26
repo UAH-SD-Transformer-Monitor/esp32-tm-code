@@ -1,4 +1,3 @@
-.env
 **.pem
 .pio
 include/transformerMonitorServerCert.h
@@ -8,3 +7,4 @@ include/transformerMonitorServerCert.h
 .vscode/c_cpp_properties.json
 .vscode/launch.json
 .vscode/ipch
+config.yml

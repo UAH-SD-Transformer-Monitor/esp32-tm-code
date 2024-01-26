@@ -25,7 +25,6 @@ void setup() {
     - MOSI: 23
     - CS: 5
   */
-  SPI.begin(SCK, MISO, MOSI, SS);
   delay(2000);
   Serial.begin(115200);
   while (!Serial) {
@@ -35,7 +34,9 @@ void setup() {
   Serial.println("Start ATM90E36");
   /*Initialise the ATM90E36 + SPI port */
   // ss pin is the first parameter
-  eic.begin(5, 60, 100, 100, 100,100, 100, 100);
+  SPI.begin(SCK, MISO, MOSI, SS);
+  delay(1000);
+  eic.begin(5, 0x003C, 0x100, 0x100, 0x100,0x100, 0x100, 0x100);
   delay(1000);
 }
 

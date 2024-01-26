@@ -64,12 +64,15 @@ ATM90E26_IC eic;
 #else
 // extract the ATM90E36 CT LINE from its macro
 #ifdef TM_ATM90E36_CT_LINE
-  char const  *ctLine = STR(TM_ATM90E36_CT_LINE);
+  char const ctLine = (char) STR(TM_ATM90E36_CT_LINE);
 #else
   char const ctLine = 'A';
 #endif
 #include <ATM90E36_IC.h>
-ATM90E36_IC eic;
+ATM90E36 ic;
+ATM90E36_IC eic(ctLine, ic);
+
+ATM90E36_IC SetupEic(ctLine, ic);
 
 #endif
 
@@ -99,4 +102,4 @@ struct tempSensors {             // Structure declaration
 
 tempSensors monitorTempSensors{cabinetTemp, oilTemp};
 
-StaticJsonDocument<256> dataStore[60];
+// StaticJsonDocument<256> dataStore[60];
