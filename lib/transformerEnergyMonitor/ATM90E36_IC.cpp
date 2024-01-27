@@ -21,27 +21,25 @@ void ATM90E36_IC::begin(){
 }
   double ATM90E36_IC::GetLineVoltage()
   {
+    double lv;
     switch (ctLine)
     {
     case 'A':
-      return eic->GetLineVoltageA();
+      lv = eic->GetLineVoltageA();
     case 'B':
-      return eic->GetLineVoltageB();
+      lv = eic->GetLineVoltageB();
     case 'C':
-      return eic->GetLineVoltageC();
+      lv = eic->GetLineVoltageC();
     break;
 
     }
+
+    return lv;
+
   }
   double ATM90E36_IC::GetSysStatus()
   {
     return eic->GetSysStatus0();
-  }
-
-  double ATM90E36_IC::GetActivePower()
-  {
-    this->meterStatus = eic->GetActivePowerA();
-    return meterStatus;
   }
 
   double ATM90E36_IC::GetActivePower()

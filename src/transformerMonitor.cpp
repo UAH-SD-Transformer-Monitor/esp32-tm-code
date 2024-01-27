@@ -24,14 +24,7 @@ void setup()
   configTime(timezone * 3600, dst * 0, "pool.ntp.org", "time.nist.gov");
 
 
-
-  // Initialize serial and wait for port to open:
-  Serial.begin(115200);
-  while (!Serial)
-  {
-  }
-
-  delay(20000);
+  delay(1000);
 
 #ifdef TM_MQTT_SSL
   wifiClient.setCACert(root_ca);
@@ -44,25 +37,17 @@ void setup()
   setupMQTTClient();
 
 
-  #ifdef ATM90E26_EIC
-  
-ATM90E26_IC eic;
+  setupEnergyMonitor();
 
-#else
-    /* Initialize the serial port to host */
-  /*
-  The ATM90E36 has to be setup via SPI.
-   SPI for the ESP32:
-    - CLK: 18
-    - MISO: 19
-    - MOSI: 23
-    - CS: 5
-  */
-  SPI.begin(SCK, MISO, MOSI, SS);
-  delay(1000);
-  eic.begin();
 
-#endif
+xTaskCreatePinnedToCore(
+      readEICData, /* Function to implement the task */
+      "Task1", /* Name of the task */
+      10000,  /* Stack size in words */
+      NULL,  /* Task input parameter */
+      0,  /* Priority of the task */
+      &Task1,  /* Task handle. */
+      0); /* Core where the task should run */
 }
 
 void connect()
@@ -129,40 +114,6 @@ void loop()
   // mqttClient.publish("xfmormermon", "buffer");
 
   // // publish a message roughly every second.
-  if (millis() - lastMillis > 1000)
-  {
-
-    monitorTempSensors.cabinet.requestTemperatures();
-    monitorTempSensors.oil.requestTemperatures();
-    unsigned short volts = 121.2;
-    float cabinetTemperatureC = monitorTempSensors.cabinet.getTempCByIndex(0);
-    float cabinetTemperatureF = monitorTempSensors.cabinet.getTempFByIndex(0);
-    StaticJsonDocument<256> doc;
-    // Get the current time and store it in a variable
-    time_t now;
-    time(&now);
-    struct tm* timeinfo = gmtime(&now);
-
-    char timeBuffer[32];
-    strftime(timeBuffer, sizeof(timeBuffer), "%FT%TZ", timeinfo);
-    // set {"time":"2021-05-04T13:13:04Z"}
-    doc["time"] = timeBuffer;
-    doc["meterStatus"] = eic.GetLineVoltage();
-    // doc["meterStatus"] = 40;
-    doc["voltage"] = volts;
-    JsonObject temp = doc.createNestedObject("temps");
-    temp["cabinet"] = 40;
-    temp["oil"] = 70;
-    // temp["cabinet"] = monitorTempSensors.cabinet.getTempCByIndex(0);
-    // temp["oil"] = monitorTempSensors.oil.getTempCByIndex(0);
-
-    // dataStore->add(doc);
-
-    char mqttBuffer[256];
-
-    serializeJson(doc, mqttBuffer);
-    mqttClient.publish("xfomermon", mqttBuffer);
-  }
   Serial.println("Sleeping 10s");
   delay(10000);
 }
@@ -181,4 +132,45 @@ void setupMQTTClient()
 // depending on which monitor is used, the function will have call different functions
 void setupEnergyMonitor()
 {
+  #ifdef ATM90E26_EIC
+  
+ATM90E26_IC eic;
+
+#else
+    /* Initialize the serial port to host */
+  /*
+  The ATM90E36 has to be setup via SPI.
+   SPI for the ESP32:
+    - CLK: 18
+    - MISO: 19
+    - MOSI: 23
+    - CS: 5
+  */
+  SPI.begin(SCK, MISO, MOSI, SS);
+  delay(1000);
+  eic.begin();
+
+#endif
+}
+
+//readEICData: reads the EIC and inserts data into queue
+void readEICData( void * pvParameters ){
+  Serial.print("Task1 running on core ");
+  Serial.println(xPortGetCoreID());
+
+  // Attach interrupt 
+  readEICTimer = timerBegin(0, 80, true);
+  timerAttachInterrupt(readEICTimer, &ReadData, true);
+  timerAlarmWrite(readEICTimer, 1000000, true);
+  timerAlarmEnable(readEICTimer); //Just Enable
+
+
+  for(;;){
+    
+    
+
+    // char mqttBuffer[256];
+
+    // serializeJson(doc, mqttBuffer);
+  } 
 }

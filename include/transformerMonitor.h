@@ -3,6 +3,10 @@
 #include <ArduinoJson.h>
 #include <OneWire.h>
 #include <DallasTemperature.h>
+#include <FreeRTOSConfig.h>
+#include <freertos/task.h>
+#include <freertos/FreeRTOS.h>
+#include <freertos/queue.h>
 
 
 
@@ -102,4 +106,45 @@ struct tempSensors {             // Structure declaration
 
 tempSensors monitorTempSensors{cabinetTemp, oilTemp};
 
-// StaticJsonDocument<256> dataStore[60];
+StaticJsonDocument<256> dataStore[60];
+time_t now;
+unsigned short volts;
+
+struct xformerMonitorData {
+  unsigned short volts;
+  double activeCurrent, passiveCurrent,
+   ;
+};
+
+hw_timer_t *readEICTimer = NULL;
+
+void IRAM_ATTR ReadData(){
+
+  StaticJsonDocument<256> doc;
+  JsonObject temp = doc.createNestedObject("temps");
+
+    // Obtain DS18B20 sensor data
+    monitorTempSensors.cabinet.requestTemperatures();
+    monitorTempSensors.oil.requestTemperatures();
+    
+    // Get temp data in Celsius and Fahrenheit
+    float cabinetTemperatureC = monitorTempSensors.cabinet.getTempCByIndex(0);
+    float cabinetTemperatureF = monitorTempSensors.cabinet.getTempFByIndex(0);
+    
+    // Get the current time and store it in a variable
+    time(&now);
+    struct tm* timeinfo = gmtime(&now);
+
+    char timeBuffer[32];
+    strftime(timeBuffer, sizeof(timeBuffer), "%FT%TZ", timeinfo);
+    // set {"time":"2021-05-04T13:13:04Z"}
+    doc["time"] = timeBuffer;
+    doc["meterStatus"] = volts;
+    doc["voltage"] = eic.GetLineVoltage();
+    temp["cabinet"] = monitorTempSensors.cabinet.getTempCByIndex(0);
+    temp["oil"] = monitorTempSensors.oil.getTempCByIndex(0);
+
+}
+
+TaskHandle_t Task1;
+void readEICData( void * pvParameters );
