@@ -23,7 +23,6 @@ void setup()
   int dst = 0;
   configTime(timezone * 3600, dst * 0, "pool.ntp.org", "time.nist.gov");
 
-
   delay(1000);
 
 #ifdef TM_MQTT_SSL
@@ -36,22 +35,21 @@ void setup()
 
   setupMQTTClient();
 
-
   setupEnergyMonitor();
 
-
-xTaskCreatePinnedToCore(
+  xTaskCreatePinnedToCore(
       readEICData, /* Function to implement the task */
-      "Task1", /* Name of the task */
-      10000,  /* Stack size in words */
-      NULL,  /* Task input parameter */
-      0,  /* Priority of the task */
-      &Task1,  /* Task handle. */
-      0); /* Core where the task should run */
+      "Task1",     /* Name of the task */
+      10000,       /* Stack size in words */
+      NULL,        /* Task input parameter */
+      0,           /* Priority of the task */
+      &Task1,      /* Task handle. */
+      0);          /* Core where the task should run */
 }
 
 void connect()
 {
+
   // connect to the WiFi network
   Serial.print("Attempting to connect to SSID: ");
   Serial.println(ssid);
@@ -86,7 +84,6 @@ void connect()
   }
 
   Serial.println("\nconnected!");
-
 }
 
 void messageReceived(String &topic, String &payload)
@@ -101,8 +98,11 @@ void messageReceived(String &topic, String &payload)
 
 void loop()
 {
+
+  StaticJsonDocument<256> eicJsonData;
+  JsonObject temp = eicJsonData.createNestedObject("temps");
   lastMillis = millis();
-  
+
   mqttClient.loop();
   delay(10); // <- fixes some issues with WiFi stability
 
@@ -132,12 +132,12 @@ void setupMQTTClient()
 // depending on which monitor is used, the function will have call different functions
 void setupEnergyMonitor()
 {
-  #ifdef ATM90E26_EIC
-  
-ATM90E26_IC eic;
+#ifdef ATM90E26_EIC
+
+  ATM90E26_IC eic;
 
 #else
-    /* Initialize the serial port to host */
+  /* Initialize the serial port to host */
   /*
   The ATM90E36 has to be setup via SPI.
    SPI for the ESP32:
@@ -153,24 +153,19 @@ ATM90E26_IC eic;
 #endif
 }
 
-//readEICData: reads the EIC and inserts data into queue
-void readEICData( void * pvParameters ){
+// readEICData: reads the EIC and inserts data into queue
+void readEICData(void *pvParameters)
+{
   Serial.print("Task1 running on core ");
   Serial.println(xPortGetCoreID());
 
-  // Attach interrupt 
+  // Attach interrupt
   readEICTimer = timerBegin(0, 80, true);
   timerAttachInterrupt(readEICTimer, &ReadData, true);
   timerAlarmWrite(readEICTimer, 1000000, true);
-  timerAlarmEnable(readEICTimer); //Just Enable
+  timerAlarmEnable(readEICTimer); // Just Enable
 
-
-  for(;;){
-    
-    
-
-    // char mqttBuffer[256];
-
-    // serializeJson(doc, mqttBuffer);
-  } 
+  for (;;)
+  {
+  }
 }

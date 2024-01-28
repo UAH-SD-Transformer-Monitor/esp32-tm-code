@@ -108,20 +108,25 @@ tempSensors monitorTempSensors{cabinetTemp, oilTemp};
 
 StaticJsonDocument<256> dataStore[60];
 time_t now;
-unsigned short volts;
+
+struct tempData {
+  float cabinetTemp, oilTemp;
+};
 
 struct xformerMonitorData {
-  unsigned short volts;
-  double activeCurrent, passiveCurrent,
-   ;
+  unsigned short SysStatus, meterStatus;
+  double activeCurrent, passiveCurrent, lineCurrent, lineVoltage,
+  activePower, passivePower, importEnergy, exportEnergy;
+  tempData temps;
 };
+
+xformerMonitorData xformerMonData; 
+
 
 hw_timer_t *readEICTimer = NULL;
 
 void IRAM_ATTR ReadData(){
 
-  StaticJsonDocument<256> doc;
-  JsonObject temp = doc.createNestedObject("temps");
 
     // Obtain DS18B20 sensor data
     monitorTempSensors.cabinet.requestTemperatures();
@@ -138,11 +143,10 @@ void IRAM_ATTR ReadData(){
     char timeBuffer[32];
     strftime(timeBuffer, sizeof(timeBuffer), "%FT%TZ", timeinfo);
     // set {"time":"2021-05-04T13:13:04Z"}
-    doc["time"] = timeBuffer;
-    doc["meterStatus"] = volts;
-    doc["voltage"] = eic.GetLineVoltage();
-    temp["cabinet"] = monitorTempSensors.cabinet.getTempCByIndex(0);
-    temp["oil"] = monitorTempSensors.oil.getTempCByIndex(0);
+
+  xformerMonData.lineVoltage = eic.GetLineVoltage();
+  xformerMonData.temps.cabinetTemp = monitorTempSensors.cabinet.getTempCByIndex(0);
+  xformerMonData.temps.oilTemp = monitorTempSensors.oil.getTempCByIndex(0);
 
 }
 
