@@ -17,6 +17,8 @@ void setupEnergyMonitor();
 // const char* test_client_cert = "";  //to verify the client
 void setup()
 {
+
+   eicDataQueue = xQueueCreate( 50, sizeof( xformerMonitorData ) );
   // configure time
   // TODO: make dst and timezone configurable
   int timezone = 3;
@@ -43,8 +45,17 @@ void setup()
       10000,       /* Stack size in words */
       NULL,        /* Task input parameter */
       0,           /* Priority of the task */
-      &Task1,      /* Task handle. */
+      &taskReadEIC,      /* Task handle. */
       0);          /* Core where the task should run */
+
+  xTaskCreatePinnedToCore(
+      sendSensorDataOverMQTT, /* Function to implement the task */
+      "Task1",     /* Name of the task */
+      10000,       /* Stack size in words */
+      NULL,        /* Task input parameter */
+      0,           /* Priority of the task */
+      &taskSendData,      /* Task handle. */
+      1);          /* Core where the task should run */
 }
 
 void connect()
@@ -99,17 +110,6 @@ void messageReceived(String &topic, String &payload)
 void loop()
 {
 
-  StaticJsonDocument<256> eicJsonData;
-  JsonObject temp = eicJsonData.createNestedObject("temps");
-  lastMillis = millis();
-
-  mqttClient.loop();
-  delay(10); // <- fixes some issues with WiFi stability
-
-  if (!mqttClient.connected())
-  {
-    connect();
-  }
 
   // mqttClient.publish("xfmormermon", "buffer");
 
@@ -126,6 +126,7 @@ void setupMQTTClient()
 
   mqttClient.setClient(wifiClient);
   mqttClient.setServer(mqttServer, mqttPort);
+  mqttClient.setBufferSize(512);
 }
 
 // this function initializes the energy monitor
@@ -167,5 +168,31 @@ void readEICData(void *pvParameters)
 
   for (;;)
   {
+  }
+}
+
+// sendSensorDataOverMQTT: reads the EIC and inserts data into queue
+void sendSensorDataOverMQTT(void *pvParameters)
+{
+  Serial.print("Task1 running on core ");
+  Serial.println(xPortGetCoreID());
+  StaticJsonDocument<512> eicJsonData;
+  JsonObject temp = eicJsonData.createNestedObject("temps");
+  xformerMonitorData sensorData;
+  for (;;)
+  {
+    
+    char timeBuffer[32];
+    strftime(timeBuffer, sizeof(timeBuffer), "%FT%TZ", sensorData.timeInfo);
+
+    lastMillis = millis();
+
+    mqttClient.loop();
+    delay(10); // <- fixes some issues with WiFi stability
+
+    if (!mqttClient.connected())
+    {
+      connect();
+    }
   }
 }

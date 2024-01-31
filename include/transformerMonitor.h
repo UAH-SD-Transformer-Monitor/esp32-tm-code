@@ -7,6 +7,7 @@
 #include <freertos/task.h>
 #include <freertos/FreeRTOS.h>
 #include <freertos/queue.h>
+#include <idf_additions.h>
 
 
 
@@ -117,38 +118,46 @@ struct xformerMonitorData {
   unsigned short SysStatus, meterStatus;
   double activeCurrent, passiveCurrent, lineCurrent, lineVoltage,
   activePower, passivePower, importEnergy, exportEnergy;
+  tm *timeInfo;
   tempData temps;
 };
 
-xformerMonitorData xformerMonData; 
+// Global to be used in ISR
+xformerMonitorData sensorData; 
 
 
 hw_timer_t *readEICTimer = NULL;
 
+// Variables for tasks
+TaskHandle_t taskReadEIC;
+TaskHandle_t taskSendData;
+
+QueueHandle_t eicDataQueue;
+
+void readEICData( void * pvParameters );
+void sendSensorDataOverMQTT( void * pvParameters );
+
 void IRAM_ATTR ReadData(){
-
-
-    // Obtain DS18B20 sensor data
-    monitorTempSensors.cabinet.requestTemperatures();
-    monitorTempSensors.oil.requestTemperatures();
-    
-    // Get temp data in Celsius and Fahrenheit
-    float cabinetTemperatureC = monitorTempSensors.cabinet.getTempCByIndex(0);
-    float cabinetTemperatureF = monitorTempSensors.cabinet.getTempFByIndex(0);
-    
     // Get the current time and store it in a variable
     time(&now);
-    struct tm* timeinfo = gmtime(&now);
+    sensorData.timeInfo = gmtime(&now);
+    
 
-    char timeBuffer[32];
-    strftime(timeBuffer, sizeof(timeBuffer), "%FT%TZ", timeinfo);
+
+  // Obtain DS18B20 sensor data
+  monitorTempSensors.cabinet.requestTemperatures();
+  monitorTempSensors.oil.requestTemperatures();
+    
+  // Get temp data in Celsius and Fahrenheit
+  float cabinetTemperatureC = monitorTempSensors.cabinet.getTempCByIndex(0);
+  float cabinetTemperatureF = monitorTempSensors.cabinet.getTempFByIndex(0);
+    
     // set {"time":"2021-05-04T13:13:04Z"}
 
-  xformerMonData.lineVoltage = eic.GetLineVoltage();
-  xformerMonData.temps.cabinetTemp = monitorTempSensors.cabinet.getTempCByIndex(0);
-  xformerMonData.temps.oilTemp = monitorTempSensors.oil.getTempCByIndex(0);
+  sensorData.lineVoltage = eic.GetLineVoltage();
+  sensorData.temps.cabinetTemp = monitorTempSensors.cabinet.getTempCByIndex(0);
+  sensorData.temps.oilTemp = monitorTempSensors.oil.getTempCByIndex(0);
+
+  xQueueSend(eicDataQueue, &sensorData, portMAX_DELAY);
 
 }
-
-TaskHandle_t Task1;
-void readEICData( void * pvParameters );
