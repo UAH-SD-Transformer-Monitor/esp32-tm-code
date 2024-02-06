@@ -231,12 +231,8 @@ void IRAM_ATTR ReadData(){
   time(&now);
   // set {"time":"2021-05-04T13:13:04Z"}
   sensorData.timeInfo = gmtime(&now);
-    
-    
 
   sensorData.lineVoltage = eic.GetLineVoltage();
-  sensorData.temps.cabinetTemp = monitorTempSensors.cabinet.getTempCByIndex(0);
-  sensorData.temps.oilTemp = monitorTempSensors.oil.getTempCByIndex(0);
 
   xQueueSend(eicDataQueue, &sensorData, portMAX_DELAY);
 
