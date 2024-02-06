@@ -17,8 +17,9 @@ void setupEnergyMonitor();
 // const char* test_client_cert = "";  //to verify the client
 void setup()
 {
+  
 
-   eicDataQueue = xQueueCreate( 50, sizeof( xformerMonitorData ) );
+  eicDataQueue = xQueueCreate( 50, sizeof( xformerMonitorData ) );
   // configure time
   // TODO: make dst and timezone configurable
   int timezone = 3;
@@ -41,7 +42,7 @@ void setup()
 
   xTaskCreatePinnedToCore(
       readEICData, /* Function to implement the task */
-      "Task1",     /* Name of the task */
+      "Read EIC data",     /* Name of the task */
       10000,       /* Stack size in words */
       NULL,        /* Task input parameter */
       0,           /* Priority of the task */
@@ -50,7 +51,7 @@ void setup()
 
   xTaskCreatePinnedToCore(
       sendSensorDataOverMQTT, /* Function to implement the task */
-      "Task1",     /* Name of the task */
+      "Send sensor data over MQTT",     /* Name of the task */
       10000,       /* Stack size in words */
       NULL,        /* Task input parameter */
       0,           /* Priority of the task */
@@ -160,7 +161,7 @@ void readEICData(void *pvParameters)
   Serial.print("Task1 running on core ");
   Serial.println(xPortGetCoreID());
 
-  // Attach interrupt
+  // Attach interrupt for reading data every one second
   readEICTimer = timerBegin(0, 80, true);
   timerAttachInterrupt(readEICTimer, &ReadData, true);
   timerAlarmWrite(readEICTimer, 1000000, true);
@@ -176,14 +177,21 @@ void sendSensorDataOverMQTT(void *pvParameters)
 {
   Serial.print("Task1 running on core ");
   Serial.println(xPortGetCoreID());
-  StaticJsonDocument<512> eicJsonData;
-  JsonObject temp = eicJsonData.createNestedObject("temps");
-  xformerMonitorData sensorData;
+  StaticJsonDocument<512> mqttJsonData;
+  JsonObject tempObj = mqttJsonData.createNestedObject("temps");
+  JsonObject powerObj = mqttJsonData.createNestedObject("power");
+  xformerMonitorData mqttSensorData;
+  int messagesWaiting = uxQueueMessagesWaiting(eicDataQueue);
+  int emptySpaces = uxQueueSpacesAvailable(eicDataQueue);
   for (;;)
   {
-    
+    xQueueReceive(eicDataQueue, &mqttSensorData, portMAX_DELAY);
     char timeBuffer[32];
-    strftime(timeBuffer, sizeof(timeBuffer), "%FT%TZ", sensorData.timeInfo);
+    strftime(timeBuffer, sizeof(timeBuffer), "%FT%TZ", mqttSensorData.timeInfo);
+
+    powerObj["active"] = eic.GetActivePower();
+    powerObj["passive"] = eic.GetPassivePower();
+    
 
     lastMillis = millis();
 
@@ -194,5 +202,42 @@ void sendSensorDataOverMQTT(void *pvParameters)
     {
       connect();
     }
+
+    messagesWaiting = uxQueueMessagesWaiting(eicDataQueue);
+    emptySpaces = uxQueueMessagesWaiting(eicDataQueue);
   }
+
+}
+
+void IRAM_ATTR ReadData(){
+  // Count the number of times the ISR has been entered
+  static int timesEnteredISR = 1;
+  timesEnteredISR++;
+
+  // Read temperature data every 60 seconds
+  // Obtain DS18B20 sensor data
+  if (timesEnteredISR == 60)
+  {
+    // TODO: find and hard-code addresses of sensors
+    tempSensors.requestTemperatures();
+    // get cabinet temp sensor data
+    sensorData.temps.cabinetTemp = tempSensors.getTempC();
+    // get oil temp sensor data
+    sensorData.temps.oilTemp = tempSensors.getTempC();
+  }
+  
+
+  // Get the current time and store it in a variable
+  time(&now);
+  // set {"time":"2021-05-04T13:13:04Z"}
+  sensorData.timeInfo = gmtime(&now);
+    
+    
+
+  sensorData.lineVoltage = eic.GetLineVoltage();
+  sensorData.temps.cabinetTemp = monitorTempSensors.cabinet.getTempCByIndex(0);
+  sensorData.temps.oilTemp = monitorTempSensors.oil.getTempCByIndex(0);
+
+  xQueueSend(eicDataQueue, &sensorData, portMAX_DELAY);
+
 }

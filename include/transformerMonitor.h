@@ -85,33 +85,25 @@ ATM90E36_IC SetupEic(ctLine, ic);
 String client_id = "xformermon-";
 
 // GPIO where the DS18B20 is connected to
-const int oilTempBus = 4;
-const int cabinetTempBus = 9;
-
+const int tempBus = 4;
 
 // Setup a oneWire instance to communicate with any OneWire devices
-OneWire cabinetTempBusOneWire(cabinetTempBus);
-OneWire oilTempBusOneWire(oilTempBus);
-
+OneWire tempBusOneWire(tempBus);
 
 // Pass our oneWire reference to Dallas Temperature sensor 
-DallasTemperature cabinetTemp(&cabinetTempBusOneWire);
-DallasTemperature oilTemp(&oilTempBusOneWire);
+DallasTemperature tempSensors(&tempBusOneWire);
 
-
-
-struct tempSensors {             // Structure declaration
-  DallasTemperature cabinet;   // Cabinet Temp (DallasTemperature variable)
-  DallasTemperature oil;   // Oil Temp (DallasTemperature variable)
-};
-
-tempSensors monitorTempSensors{cabinetTemp, oilTemp};
 
 StaticJsonDocument<256> dataStore[60];
 time_t now;
 
+// Data structs for queue
 struct tempData {
   float cabinetTemp, oilTemp;
+};
+
+struct powerData {
+  float activePower, passivePower;
 };
 
 struct xformerMonitorData {
@@ -120,7 +112,9 @@ struct xformerMonitorData {
   activePower, passivePower, importEnergy, exportEnergy;
   tm *timeInfo;
   tempData temps;
+  powerData power;
 };
+// End data structs for queue
 
 // Global to be used in ISR
 xformerMonitorData sensorData; 
@@ -137,27 +131,14 @@ QueueHandle_t eicDataQueue;
 void readEICData( void * pvParameters );
 void sendSensorDataOverMQTT( void * pvParameters );
 
-void IRAM_ATTR ReadData(){
-    // Get the current time and store it in a variable
-    time(&now);
-    sensorData.timeInfo = gmtime(&now);
-    
+void IRAM_ATTR ReadData();
 
-
-  // Obtain DS18B20 sensor data
-  monitorTempSensors.cabinet.requestTemperatures();
-  monitorTempSensors.oil.requestTemperatures();
-    
-  // Get temp data in Celsius and Fahrenheit
-  float cabinetTemperatureC = monitorTempSensors.cabinet.getTempCByIndex(0);
-  float cabinetTemperatureF = monitorTempSensors.cabinet.getTempFByIndex(0);
-    
-    // set {"time":"2021-05-04T13:13:04Z"}
-
-  sensorData.lineVoltage = eic.GetLineVoltage();
-  sensorData.temps.cabinetTemp = monitorTempSensors.cabinet.getTempCByIndex(0);
-  sensorData.temps.oilTemp = monitorTempSensors.oil.getTempCByIndex(0);
-
-  xQueueSend(eicDataQueue, &sensorData, portMAX_DELAY);
-
-}
+struct xformerMonConfigData {
+  char *wifiSsid;
+  char *wifiPass;
+  char *mqttName;
+  char *mqttServerHost;
+  char *mqttUserName;
+  char *mqttPassword;
+  uint16_t mqttServerPort;
+} monitorConfig;
