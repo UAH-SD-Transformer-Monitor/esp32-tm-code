@@ -12,9 +12,20 @@ public:
   ATM90E36_IC(const char ctLineLetter, ATM90E36 ic);
 
   void begin();
+
   double GetLineVoltage();
   double GetActivePower();
   double GetSysStatus();
-  double GetPassivePower();
+
+  double GetLineCurrent();
+  double GetLineCurrentN();
+  
+  double GetApparentPower();
+  
+  double GetPowerFactor();
+  
+  double GetVHarm();
+  double GetCHarm();
+
 
 };

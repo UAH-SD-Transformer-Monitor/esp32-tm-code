@@ -54,8 +54,67 @@ void ATM90E36_IC::begin(){
       ap = eic->GetActivePowerB();
     break;
     case 'C':
-      ap = this->eic->GetActivePowerC();
+      ap = eic->GetActivePowerC();
     break;
     }
     return ap;
+  }
+
+  double ATM90E36_IC::GetVHarm()
+  {
+    double vh;
+    switch (ctLine)
+    {
+    case 'A':
+      vh = eic->GetVHarmA();
+    break;
+    case 'B':
+      vh = eic->GetVHarmB();
+    break;
+    case 'C':
+      vh = eic->GetVHarmC();
+    break;
+    }
+    return vh;
+  }
+
+  double ATM90E36_IC::GetCHarm()
+  {
+    double ch;
+    switch (ctLine)
+    {
+    case 'A':
+      ch = eic->GetVHarmA();
+    break;
+    case 'B':
+      ch = eic->GetVHarmB();
+    break;
+    case 'C':
+      ch = eic->GetVHarmC();
+    break;
+    }
+    return ch;
+  }
+  
+  double ATM90E36_IC::GetPowerFactor()
+  {
+    double pf;
+    switch (ctLine)
+    {
+    case 'A':
+      pf = eic->GetPowerFactorA();
+    break;
+    case 'B':
+      pf = eic->GetPowerFactorB();
+    break;
+    case 'C':
+      pf = eic->GetPowerFactorC();
+    break;
+    }
+    return pf;
+  }
+
+  double ATM90E36_IC::GetApparentPower()
+  {
+    return eic->GetTotalApparentPower();
   }

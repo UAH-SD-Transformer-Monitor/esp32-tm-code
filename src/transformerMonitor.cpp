@@ -190,7 +190,7 @@ void sendSensorDataOverMQTT(void *pvParameters)
     strftime(timeBuffer, sizeof(timeBuffer), "%FT%TZ", mqttSensorData.timeInfo);
 
     powerObj["active"] = eic.GetActivePower();
-    powerObj["passive"] = eic.GetPassivePower();
+    powerObj["apparent"] = eic.GetApparentPower();
     
 
     lastMillis = millis();
@@ -221,9 +221,9 @@ void IRAM_ATTR ReadData(){
     // TODO: find and hard-code addresses of sensors
     tempSensors.requestTemperatures();
     // get cabinet temp sensor data
-    sensorData.temps.cabinetTemp = tempSensors.getTempC();
+    // sensorData.temps.cabinetTemp = tempSensors.getTempC();
     // get oil temp sensor data
-    sensorData.temps.oilTemp = tempSensors.getTempC();
+    // sensorData.temps.oilTemp = tempSensors.getTempC();
   }
   
 
