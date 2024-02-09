@@ -84,35 +84,53 @@ ATM90E36_IC SetupEic(ctLine, ic);
 // we are using the ESP32's MAC address to provide a unique ID
 String client_id = "xformermon-";
 
+
+
 // GPIO where the DS18B20 is connected to
-const int tempBus = 4;
+const int oilTempBus = 4;
+const int cabinetTempBus = 9;
+
+struct tempSensors {
+  DallasTemperature oil, cabinet;
+};
 
 // Setup a oneWire instance to communicate with any OneWire devices
-OneWire tempBusOneWire(tempBus);
+OneWire oilTempBusOneWire(oilTempBus);
+OneWire cabinetTempBusOneWire(cabinetTempBus);
 
 // Pass our oneWire reference to Dallas Temperature sensor 
-DallasTemperature tempSensors(&tempBusOneWire);
+DallasTemperature oilTempSensor(&oilTempBusOneWire);
+DallasTemperature cabinetTempSensor(&cabinetTempBusOneWire);
 
+tempSensors monitorTempSensors{oilTempSensor, cabinetTempSensor};
 
 StaticJsonDocument<256> dataStore[60];
 time_t now;
 
 // Data structs for queue
 struct tempData {
-  float cabinetTemp, oilTemp;
+  float cabinet, oil;
 };
 
 struct powerData {
-  float activePower, passivePower;
+  double active, apparent, reactive, factor;
+};
+
+struct harmonicData {
+  double voltage, current;
+};
+struct energyData {
+  double import, exp;
 };
 
 struct xformerMonitorData {
-  unsigned short SysStatus, meterStatus;
-  double activeCurrent, passiveCurrent, lineCurrent, lineVoltage,
-  activePower, passivePower, importEnergy, exportEnergy;
+  unsigned short sysStatus, meterStatus;
+  double lineCurrent, neutralCurrent, lineVoltage, phase;
   tm *timeInfo;
   tempData temps;
   powerData power;
+  harmonicData harmonics;
+  energyData energy;
 };
 // End data structs for queue
 

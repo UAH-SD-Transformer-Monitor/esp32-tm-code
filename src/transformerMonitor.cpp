@@ -17,7 +17,6 @@ void setupEnergyMonitor();
 // const char* test_client_cert = "";  //to verify the client
 void setup()
 {
-  
 
   eicDataQueue = xQueueCreate( 50, sizeof( xformerMonitorData ) );
   // configure time
@@ -180,6 +179,8 @@ void sendSensorDataOverMQTT(void *pvParameters)
   StaticJsonDocument<512> mqttJsonData;
   JsonObject tempObj = mqttJsonData.createNestedObject("temps");
   JsonObject powerObj = mqttJsonData.createNestedObject("power");
+  JsonObject energyObj = mqttJsonData.createNestedObject("energy");
+  JsonObject harmonicObj = mqttJsonData.createNestedObject("harmonics");
   xformerMonitorData mqttSensorData;
   int messagesWaiting = uxQueueMessagesWaiting(eicDataQueue);
   int emptySpaces = uxQueueSpacesAvailable(eicDataQueue);
@@ -189,9 +190,27 @@ void sendSensorDataOverMQTT(void *pvParameters)
     char timeBuffer[32];
     strftime(timeBuffer, sizeof(timeBuffer), "%FT%TZ", mqttSensorData.timeInfo);
 
-    powerObj["active"] = eic.GetActivePower();
-    powerObj["apparent"] = eic.GetApparentPower();
+    mqttJsonData["deviceId"] = "esp32-random-id";
+    mqttJsonData["time"] = timeBuffer;
+    mqttJsonData["meterStatus"] = mqttSensorData.meterStatus;
+    mqttJsonData["sysStatus"] = mqttSensorData.sysStatus;
+    mqttJsonData["current"] = mqttSensorData.lineCurrent;
+    mqttJsonData["neutralCurrent"] = mqttSensorData.neutralCurrent;
+    mqttJsonData["voltage"] = mqttSensorData.lineCurrent;
+    powerObj["active"] = mqttSensorData.power.active;
+    powerObj["apparent"] = mqttSensorData.power.apparent;
+    powerObj["factor"] = mqttSensorData.power.factor;
+    powerObj["reactive"] = mqttSensorData.power.reactive;
+
+    tempObj["oil"] = mqttSensorData.temps.oil;
+    tempObj["cabinet"] = mqttSensorData.temps.cabinet;
     
+    energyObj["export"] = mqttSensorData.energy.exp;
+    energyObj["import"] = mqttSensorData.energy.import;
+
+    energyObj["harmonics"] = mqttSensorData.harmonics.current;
+    energyObj["harmonics"] = mqttSensorData.harmonics.voltage;
+
 
     lastMillis = millis();
 
@@ -219,7 +238,8 @@ void IRAM_ATTR ReadData(){
   if (timesEnteredISR == 60)
   {
     // TODO: find and hard-code addresses of sensors
-    tempSensors.requestTemperatures();
+    monitorTempSensors.cabinet.requestTemperatures();
+    monitorTempSensors.oil.requestTemperatures();
     // get cabinet temp sensor data
     // sensorData.temps.cabinetTemp = tempSensors.getTempC();
     // get oil temp sensor data
@@ -233,6 +253,8 @@ void IRAM_ATTR ReadData(){
   sensorData.timeInfo = gmtime(&now);
 
   sensorData.lineVoltage = eic.GetLineVoltage();
+  sensorData.neutralCurrent = eic.GetLineCurrentN();
+  // sensorData.energy.exp =
 
   xQueueSend(eicDataQueue, &sensorData, portMAX_DELAY);
 
