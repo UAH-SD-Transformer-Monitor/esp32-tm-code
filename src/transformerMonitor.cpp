@@ -32,8 +32,12 @@ void setup()
 #endif
 
   // Start the DS18B20 sensors
-  // monitorTempSensors.cabinet.begin();
-  // monitorTempSensors.oil.begin();
+  monitorTempSensors.cabinet.begin();
+  monitorTempSensors.oil.begin();
+
+  // Get each DS18B20 sensors' address
+  monitorTempSensors.oil.getAddress(oilTempSensorAddr, 0);
+  monitorTempSensors.cabinet.getAddress(cabinetTempSensorAddr, 0);
 
   setupMQTTClient();
 
@@ -186,33 +190,36 @@ void sendSensorDataOverMQTT(void *pvParameters)
   int emptySpaces = uxQueueSpacesAvailable(eicDataQueue);
   for (;;)
   {
-    xQueueReceive(eicDataQueue, &mqttSensorData, portMAX_DELAY);
-    char timeBuffer[32];
-    strftime(timeBuffer, sizeof(timeBuffer), "%FT%TZ", mqttSensorData.timeInfo);
+    if (messagesWaiting > 2)
+    {
+      xQueueReceive(eicDataQueue, &mqttSensorData, portMAX_DELAY);
+      char timeBuffer[32];
+      strftime(timeBuffer, sizeof(timeBuffer), "%FT%TZ", mqttSensorData.timeInfo);
 
-    mqttJsonData["deviceId"] = "esp32-random-id";
-    mqttJsonData["time"] = timeBuffer;
-    mqttJsonData["meterStatus"] = mqttSensorData.meterStatus;
-    mqttJsonData["sysStatus"] = mqttSensorData.sysStatus;
-    mqttJsonData["current"] = mqttSensorData.lineCurrent;
-    mqttJsonData["neutralCurrent"] = mqttSensorData.neutralCurrent;
-    mqttJsonData["voltage"] = mqttSensorData.lineCurrent;
-    powerObj["active"] = mqttSensorData.power.active;
-    powerObj["apparent"] = mqttSensorData.power.apparent;
-    powerObj["factor"] = mqttSensorData.power.factor;
-    powerObj["reactive"] = mqttSensorData.power.reactive;
+      mqttJsonData["deviceId"] = "esp32-random-id";
+      mqttJsonData["time"] = timeBuffer;
+      mqttJsonData["meterStatus"] = mqttSensorData.meterStatus;
+      mqttJsonData["sysStatus"] = mqttSensorData.sysStatus;
+      mqttJsonData["current"] = mqttSensorData.lineCurrent;
+      mqttJsonData["neutralCurrent"] = mqttSensorData.neutralCurrent;
+      mqttJsonData["voltage"] = mqttSensorData.lineCurrent;
+      powerObj["active"] = mqttSensorData.power.active;
+      powerObj["apparent"] = mqttSensorData.power.apparent;
+      powerObj["factor"] = mqttSensorData.power.factor;
+      powerObj["reactive"] = mqttSensorData.power.reactive;
 
-    tempObj["oil"] = mqttSensorData.temps.oil;
-    tempObj["cabinet"] = mqttSensorData.temps.cabinet;
-    
-    energyObj["export"] = mqttSensorData.energy.exp;
-    energyObj["import"] = mqttSensorData.energy.import;
+      tempObj["oil"] = mqttSensorData.temps.oil;
+      tempObj["cabinet"] = mqttSensorData.temps.cabinet;
+      
+      energyObj["export"] = mqttSensorData.energy.exp;
+      energyObj["import"] = mqttSensorData.energy.import;
 
-    energyObj["harmonics"] = mqttSensorData.harmonics.current;
-    energyObj["harmonics"] = mqttSensorData.harmonics.voltage;
-
-
-    lastMillis = millis();
+      energyObj["harmonics"] = mqttSensorData.harmonics.current;
+      energyObj["harmonics"] = mqttSensorData.harmonics.voltage;
+      char buffer[256];
+      size_t n = serializeJson(mqttJsonData, buffer);
+      mqttClient.publish("xfmormermon/", buffer, n);
+    }
 
     mqttClient.loop();
     delay(10); // <- fixes some issues with WiFi stability
@@ -221,7 +228,6 @@ void sendSensorDataOverMQTT(void *pvParameters)
     {
       connect();
     }
-
     messagesWaiting = uxQueueMessagesWaiting(eicDataQueue);
     emptySpaces = uxQueueMessagesWaiting(eicDataQueue);
   }
@@ -237,13 +243,13 @@ void IRAM_ATTR ReadData(){
   // Obtain DS18B20 sensor data
   if (timesEnteredISR == 60)
   {
-    // TODO: find and hard-code addresses of sensors
+    timesEnteredISR = 0;
     monitorTempSensors.cabinet.requestTemperatures();
     monitorTempSensors.oil.requestTemperatures();
     // get cabinet temp sensor data
-    // sensorData.temps.cabinetTemp = tempSensors.getTempC();
+    sensorData.temps.cabinet = monitorTempSensors.cabinet.getTempC(cabinetTempSensorAddr);
     // get oil temp sensor data
-    // sensorData.temps.oilTemp = tempSensors.getTempC();
+    sensorData.temps.oil =  monitorTempSensors.oil.getTempC(oilTempSensorAddr);
   }
   
 

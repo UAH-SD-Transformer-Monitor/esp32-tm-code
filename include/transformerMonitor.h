@@ -94,6 +94,9 @@ struct tempSensors {
   DallasTemperature oil, cabinet;
 };
 
+DeviceAddress oilTempSensorAddr;
+DeviceAddress cabinetTempSensorAddr;
+
 // Setup a oneWire instance to communicate with any OneWire devices
 OneWire oilTempBusOneWire(oilTempBus);
 OneWire cabinetTempBusOneWire(cabinetTempBus);
@@ -135,21 +138,24 @@ struct xformerMonitorData {
 // End data structs for queue
 
 // Global to be used in ISR
-xformerMonitorData sensorData; 
-
-
-hw_timer_t *readEICTimer = NULL;
+xformerMonitorData sensorData;
 
 // Variables for tasks
 TaskHandle_t taskReadEIC;
 TaskHandle_t taskSendData;
 
 QueueHandle_t eicDataQueue;
+// End variables for tasks
 
+// Functions for tasks
 void readEICData( void * pvParameters );
 void sendSensorDataOverMQTT( void * pvParameters );
+// End functions for tasks
 
+// Timer variable and function
+hw_timer_t *readEICTimer = NULL;
 void IRAM_ATTR ReadData();
+// End timer variable and function
 
 struct xformerMonConfigData {
   char *wifiSsid;
