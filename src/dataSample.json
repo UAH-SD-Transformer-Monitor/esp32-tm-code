@@ -1,27 +1,15 @@
 {
-    "deviceId": "esp32-blah-blah-random",
-    "time": 1351824120,
-    "voltage": 120,
-    "lineCurrent": 60,
-    "neutralLineCurrent": 60,
-    "meterStatus": 100,
-    "sysStatus": 60,
-    "energy": {
-      "export": 40,
-      "import": 40
-    },
-    "harmonics": {
-      "voltage": 6,
-      "current": 6
-    },
+    "time": "2021-05-04T13:13:04Z",
+    "volts": 120.00,
+    "amps": 600,
     "power": {
-      "active": 6,
-      "apparent": 6,
-      "reactive": 6,
-      "factor": 60
+        "active": 90,
+        "passive": 8
     },
+    "meterStatus": 60,
+    "id": "xformermon-random-data",
     "temps": {
-      "oil": 150,
-      "cabinet": 60
+        "oil": 70.0,
+        "cabinet": 60.0
     }
 }

@@ -39,10 +39,10 @@ if wifiConfig.get("ssid") == None:
     print(f"wifi object variable SSID not defined. Define it in the config.yml file at the root of the project.")
     os._exit(1)
 
-if wifiConfig.get("password") == None:
+if wifiConfig["password"] == None:
     print(f"wifi object variable password not defined. Define it in the config.yml file at the root of the project.")
     os._exit(1)
-if mqttConfig.get("server") == None:
+if mqttConfig["server"] == None:
     print(f"mqtt object variable server not defined. Define it in the config.yml file at the root of the project.")
     os._exit(1)
 
