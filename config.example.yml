@@ -5,7 +5,7 @@ wifi:
   # Your WiFi SSID
   ssid: "Your-WiFi-SSID"
   # Your WiFi Password
-  passwd: Your-Secret-WiFi-Password
+  password: "Your-Secret-WiFi-Password"
 mqtt:
   # Your MQTT server
   server: your.mqtt-broker.tld

@@ -17,56 +17,54 @@ void setupEnergyMonitor();
 // const char* test_client_cert = "";  //to verify the client
 void setup()
 {
+
+  eicDataQueue = xQueueCreate( 50, sizeof( xformerMonitorData ) );
   // configure time
   // TODO: make dst and timezone configurable
   int timezone = 3;
   int dst = 0;
   configTime(timezone * 3600, dst * 0, "pool.ntp.org", "time.nist.gov");
 
-
-
-  // Initialize serial and wait for port to open:
-  Serial.begin(115200);
-  while (!Serial)
-  {
-  }
-
-  delay(20000);
+  delay(1000);
 
 #ifdef TM_MQTT_SSL
   wifiClient.setCACert(root_ca);
 #endif
 
   // Start the DS18B20 sensors
-  // monitorTempSensors.cabinet.begin();
-  // monitorTempSensors.oil.begin();
+  monitorTempSensors.cabinet.begin();
+  monitorTempSensors.oil.begin();
+
+  // Get each DS18B20 sensors' address
+  monitorTempSensors.oil.getAddress(oilTempSensorAddr, 0);
+  monitorTempSensors.cabinet.getAddress(cabinetTempSensorAddr, 0);
 
   setupMQTTClient();
 
+  setupEnergyMonitor();
 
-  #ifdef ATM90E26_EIC
-  
-ATM90E26_IC eic;
+  xTaskCreatePinnedToCore(
+      readEICData, /* Function to implement the task */
+      "Read EIC data",     /* Name of the task */
+      10000,       /* Stack size in words */
+      NULL,        /* Task input parameter */
+      0,           /* Priority of the task */
+      &taskReadEIC,      /* Task handle. */
+      0);          /* Core where the task should run */
 
-#else
-    /* Initialize the serial port to host */
-  /*
-  The ATM90E36 has to be setup via SPI.
-   SPI for the ESP32:
-    - CLK: 18
-    - MISO: 19
-    - MOSI: 23
-    - CS: 5
-  */
-  SPI.begin(SCK, MISO, MOSI, SS);
-  delay(1000);
-  eic.begin();
-
-#endif
+  xTaskCreatePinnedToCore(
+      sendSensorDataOverMQTT, /* Function to implement the task */
+      "Send sensor data over MQTT",     /* Name of the task */
+      10000,       /* Stack size in words */
+      NULL,        /* Task input parameter */
+      0,           /* Priority of the task */
+      &taskSendData,      /* Task handle. */
+      1);          /* Core where the task should run */
 }
 
 void connect()
 {
+
   // connect to the WiFi network
   Serial.print("Attempting to connect to SSID: ");
   Serial.println(ssid);
@@ -101,7 +99,6 @@ void connect()
   }
 
   Serial.println("\nconnected!");
-
 }
 
 void messageReceived(String &topic, String &payload)
@@ -116,53 +113,11 @@ void messageReceived(String &topic, String &payload)
 
 void loop()
 {
-  lastMillis = millis();
-  
-  mqttClient.loop();
-  delay(10); // <- fixes some issues with WiFi stability
 
-  if (!mqttClient.connected())
-  {
-    connect();
-  }
 
   // mqttClient.publish("xfmormermon", "buffer");
 
   // // publish a message roughly every second.
-  if (millis() - lastMillis > 1000)
-  {
-
-    monitorTempSensors.cabinet.requestTemperatures();
-    monitorTempSensors.oil.requestTemperatures();
-    unsigned short volts = 121.2;
-    float cabinetTemperatureC = monitorTempSensors.cabinet.getTempCByIndex(0);
-    float cabinetTemperatureF = monitorTempSensors.cabinet.getTempFByIndex(0);
-    StaticJsonDocument<256> doc;
-    // Get the current time and store it in a variable
-    time_t now;
-    time(&now);
-    struct tm* timeinfo = gmtime(&now);
-
-    char timeBuffer[32];
-    strftime(timeBuffer, sizeof(timeBuffer), "%FT%TZ", timeinfo);
-    // set {"time":"2021-05-04T13:13:04Z"}
-    doc["time"] = timeBuffer;
-    doc["meterStatus"] = eic.GetLineVoltage();
-    // doc["meterStatus"] = 40;
-    doc["voltage"] = volts;
-    JsonObject temp = doc.createNestedObject("temps");
-    temp["cabinet"] = 40;
-    temp["oil"] = 70;
-    // temp["cabinet"] = monitorTempSensors.cabinet.getTempCByIndex(0);
-    // temp["oil"] = monitorTempSensors.oil.getTempCByIndex(0);
-
-    // dataStore->add(doc);
-
-    char mqttBuffer[256];
-
-    serializeJson(doc, mqttBuffer);
-    mqttClient.publish("xfomermon", mqttBuffer);
-  }
   Serial.println("Sleeping 10s");
   delay(10000);
 }
@@ -175,10 +130,135 @@ void setupMQTTClient()
 
   mqttClient.setClient(wifiClient);
   mqttClient.setServer(mqttServer, mqttPort);
+  mqttClient.setBufferSize(512);
 }
 
 // this function initializes the energy monitor
 // depending on which monitor is used, the function will have call different functions
 void setupEnergyMonitor()
 {
+#ifdef ATM90E26_EIC
+
+  ATM90E26_IC eic;
+
+#else
+  /* Initialize the serial port to host */
+  /*
+  The ATM90E36 has to be setup via SPI.
+   SPI for the ESP32:
+    - CLK: 18
+    - MISO: 19
+    - MOSI: 23
+    - CS: 5
+  */
+  SPI.begin(SCK, MISO, MOSI, SS);
+  delay(1000);
+  eic.begin();
+
+#endif
+}
+
+// readEICData: reads the EIC and inserts data into queue
+void readEICData(void *pvParameters)
+{
+  Serial.print("Task1 running on core ");
+  Serial.println(xPortGetCoreID());
+
+  // Attach interrupt for reading data every one second
+  readEICTimer = timerBegin(0, 80, true);
+  timerAttachInterrupt(readEICTimer, &ReadData, true);
+  timerAlarmWrite(readEICTimer, 1000000, true);
+  timerAlarmEnable(readEICTimer); // Just Enable
+
+  for (;;)
+  {
+  }
+}
+
+// sendSensorDataOverMQTT: reads the EIC and inserts data into queue
+void sendSensorDataOverMQTT(void *pvParameters)
+{
+  Serial.print("Task1 running on core ");
+  Serial.println(xPortGetCoreID());
+  StaticJsonDocument<512> mqttJsonData;
+  JsonObject tempObj = mqttJsonData.createNestedObject("temps");
+  JsonObject powerObj = mqttJsonData.createNestedObject("power");
+  JsonObject energyObj = mqttJsonData.createNestedObject("energy");
+  xformerMonitorData mqttSensorData;
+  int messagesWaiting = uxQueueMessagesWaiting(eicDataQueue);
+  int emptySpaces = uxQueueSpacesAvailable(eicDataQueue);
+  for (;;)
+  {
+    if (messagesWaiting > 2)
+    {
+      xQueueReceive(eicDataQueue, &mqttSensorData, portMAX_DELAY);
+      char timeBuffer[32];
+      strftime(timeBuffer, sizeof(timeBuffer), "%FT%TZ", mqttSensorData.timeInfo);
+
+      mqttJsonData["deviceId"] = "esp32-random-id";
+      mqttJsonData["time"] = timeBuffer;
+      mqttJsonData["meterStatus"] = mqttSensorData.meterStatus;
+      mqttJsonData["sysStatus"] = mqttSensorData.sysStatus;
+      mqttJsonData["current"] = mqttSensorData.lineCurrent;
+      mqttJsonData["neutralCurrent"] = mqttSensorData.neutralCurrent;
+      mqttJsonData["voltage"] = mqttSensorData.lineCurrent;
+      powerObj["active"] = mqttSensorData.power.active;
+      powerObj["apparent"] = mqttSensorData.power.apparent;
+      powerObj["factor"] = mqttSensorData.power.factor;
+      powerObj["reactive"] = mqttSensorData.power.reactive;
+
+      tempObj["oil"] = mqttSensorData.temps.oil;
+      tempObj["cabinet"] = mqttSensorData.temps.cabinet;
+      
+      energyObj["export"] = mqttSensorData.energy.exp;
+      energyObj["import"] = mqttSensorData.energy.import;
+
+      char buffer[256];
+      size_t n = serializeJson(mqttJsonData, buffer);
+      mqttClient.publish("xfmormermon/", buffer, n);
+    }
+
+    mqttClient.loop();
+    delay(10); // <- fixes some issues with WiFi stability
+
+    if (!mqttClient.connected())
+    {
+      connect();
+    }
+    messagesWaiting = uxQueueMessagesWaiting(eicDataQueue);
+    emptySpaces = uxQueueMessagesWaiting(eicDataQueue);
+  }
+
+}
+
+void IRAM_ATTR ReadData(){
+  // Count the number of times the ISR has been entered
+  static int timesEnteredISR = 1;
+  timesEnteredISR++;
+
+  // Read temperature data every 60 seconds
+  // Obtain DS18B20 sensor data
+  if (timesEnteredISR == 60)
+  {
+    timesEnteredISR = 0;
+    monitorTempSensors.cabinet.requestTemperatures();
+    monitorTempSensors.oil.requestTemperatures();
+    // get cabinet temp sensor data
+    sensorData.temps.cabinet = monitorTempSensors.cabinet.getTempC(cabinetTempSensorAddr);
+    // get oil temp sensor data
+    sensorData.temps.oil =  monitorTempSensors.oil.getTempC(oilTempSensorAddr);
+  }
+  
+
+  // Get the current time and store it in a variable
+  time(&now);
+  // set {"time":"2021-05-04T13:13:04Z"}
+  sensorData.timeInfo = gmtime(&now);
+
+  sensorData.lineVoltage = eic.GetLineVoltage();
+  sensorData.neutralCurrent = eic.GetLineCurrentN();
+  // sensorData.energy.exp =
+
+  xQueueSend(eicDataQueue, &sensorData, portMAX_DELAY);
+
 }

@@ -3,6 +3,11 @@
 #include <ArduinoJson.h>
 #include <OneWire.h>
 #include <DallasTemperature.h>
+#include <FreeRTOSConfig.h>
+#include <freertos/task.h>
+#include <freertos/FreeRTOS.h>
+#include <freertos/queue.h>
+#include <idf_additions.h>
 
 
 
@@ -79,27 +84,84 @@ ATM90E36_IC SetupEic(ctLine, ic);
 // we are using the ESP32's MAC address to provide a unique ID
 String client_id = "xformermon-";
 
+
+
 // GPIO where the DS18B20 is connected to
 const int oilTempBus = 4;
 const int cabinetTempBus = 9;
 
-
-// Setup a oneWire instance to communicate with any OneWire devices
-OneWire cabinetTempBusOneWire(cabinetTempBus);
-OneWire oilTempBusOneWire(oilTempBus);
-
-
-// Pass our oneWire reference to Dallas Temperature sensor 
-DallasTemperature cabinetTemp(&cabinetTempBusOneWire);
-DallasTemperature oilTemp(&oilTempBusOneWire);
-
-
-
-struct tempSensors {             // Structure declaration
-  DallasTemperature cabinet;   // Cabinet Temp (DallasTemperature variable)
-  DallasTemperature oil;   // Oil Temp (DallasTemperature variable)
+struct tempSensors {
+  DallasTemperature oil, cabinet;
 };
 
-tempSensors monitorTempSensors{cabinetTemp, oilTemp};
+DeviceAddress oilTempSensorAddr;
+DeviceAddress cabinetTempSensorAddr;
 
-// StaticJsonDocument<256> dataStore[60];
+// Setup a oneWire instance to communicate with any OneWire devices
+OneWire oilTempBusOneWire(oilTempBus);
+OneWire cabinetTempBusOneWire(cabinetTempBus);
+
+// Pass our oneWire reference to Dallas Temperature sensor 
+DallasTemperature oilTempSensor(&oilTempBusOneWire);
+DallasTemperature cabinetTempSensor(&cabinetTempBusOneWire);
+
+tempSensors monitorTempSensors{oilTempSensor, cabinetTempSensor};
+
+StaticJsonDocument<256> dataStore[60];
+time_t now;
+
+// Data structs for queue
+struct tempData {
+  float cabinet, oil;
+};
+
+struct powerData {
+  double active, apparent, reactive, factor;
+};
+
+struct harmonicData {
+  double voltage, current;
+};
+struct energyData {
+  double import, exp;
+};
+
+struct xformerMonitorData {
+  unsigned short sysStatus, meterStatus;
+  double lineCurrent, neutralCurrent, lineVoltage, phase;
+  tm *timeInfo;
+  tempData temps;
+  powerData power;
+  energyData energy;
+};
+// End data structs for queue
+
+// Global to be used in ISR
+xformerMonitorData sensorData;
+
+// Variables for tasks
+TaskHandle_t taskReadEIC;
+TaskHandle_t taskSendData;
+
+QueueHandle_t eicDataQueue;
+// End variables for tasks
+
+// Functions for tasks
+void readEICData( void * pvParameters );
+void sendSensorDataOverMQTT( void * pvParameters );
+// End functions for tasks
+
+// Timer variable and function
+hw_timer_t *readEICTimer = NULL;
+void IRAM_ATTR ReadData();
+// End timer variable and function
+
+struct xformerMonConfigData {
+  char *wifiSsid;
+  char *wifiPass;
+  char *mqttName;
+  char *mqttServerHost;
+  char *mqttUserName;
+  char *mqttPassword;
+  uint16_t mqttServerPort;
+} monitorConfig;
