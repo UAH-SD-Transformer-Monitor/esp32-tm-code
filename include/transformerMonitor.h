@@ -132,7 +132,6 @@ struct xformerMonitorData {
   tm *timeInfo;
   tempData temps;
   powerData power;
-  harmonicData harmonics;
   energyData energy;
 };
 // End data structs for queue

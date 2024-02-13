@@ -184,7 +184,6 @@ void sendSensorDataOverMQTT(void *pvParameters)
   JsonObject tempObj = mqttJsonData.createNestedObject("temps");
   JsonObject powerObj = mqttJsonData.createNestedObject("power");
   JsonObject energyObj = mqttJsonData.createNestedObject("energy");
-  JsonObject harmonicObj = mqttJsonData.createNestedObject("harmonics");
   xformerMonitorData mqttSensorData;
   int messagesWaiting = uxQueueMessagesWaiting(eicDataQueue);
   int emptySpaces = uxQueueSpacesAvailable(eicDataQueue);
@@ -214,8 +213,6 @@ void sendSensorDataOverMQTT(void *pvParameters)
       energyObj["export"] = mqttSensorData.energy.exp;
       energyObj["import"] = mqttSensorData.energy.import;
 
-      energyObj["harmonics"] = mqttSensorData.harmonics.current;
-      energyObj["harmonics"] = mqttSensorData.harmonics.voltage;
       char buffer[256];
       size_t n = serializeJson(mqttJsonData, buffer);
       mqttClient.publish("xfmormermon/", buffer, n);
