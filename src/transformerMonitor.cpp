@@ -213,7 +213,7 @@ void sendSensorDataOverMQTT(void *pvParameters)
       energyObj["export"] = mqttSensorData.energy.exp;
       energyObj["import"] = mqttSensorData.energy.import;
 
-      char buffer[256];
+      char buffer[512];
       size_t n = serializeJson(mqttJsonData, buffer);
       mqttClient.publish("xfmormermon/", buffer, n);
     }
