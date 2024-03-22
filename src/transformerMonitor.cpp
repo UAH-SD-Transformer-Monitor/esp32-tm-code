@@ -24,8 +24,13 @@ void setup()
   // set LED to Red - FF0000
   setColor(255, 0, 0);
   delay(10000);
+  Serial.begin(9600);
 
   eicDataQueue = xQueueCreate( 50, sizeof( xformerMonitorData ) );
+  if (eicDataQueue == 0)
+  {
+    printf("Failed to create queue= %p\n", eicDataQueue);
+  }
   // configure time
   // TODO: make dst and timezone configurable
   int timezone = 3;
@@ -39,12 +44,12 @@ void setup()
 #endif
 
   // Start the DS18B20 sensors
-  monitorTempSensors.cabinet.begin();
-  monitorTempSensors.oil.begin();
+  // monitorTempSensors.cabinet.begin();
+  // monitorTempSensors.oil.begin();
 
-  // Get each DS18B20 sensors' address
-  monitorTempSensors.oil.getAddress(oilTempSensorAddr, 0);
-  monitorTempSensors.cabinet.getAddress(cabinetTempSensorAddr, 0);
+  // // Get each DS18B20 sensors' address
+  // monitorTempSensors.oil.getAddress(oilTempSensorAddr, 0);
+  // monitorTempSensors.cabinet.getAddress(cabinetTempSensorAddr, 0);
 
 
 
@@ -61,7 +66,7 @@ void setup()
       NULL,        /* Task input parameter */
       0,           /* Priority of the task */
       &taskReadEIC,      /* Task handle. */
-      0);          /* Core where the task should run */
+      1);          /* Core where the task should run */
 
   xTaskCreatePinnedToCore(
       sendSensorDataOverMQTT, /* Function to implement the task */
@@ -70,7 +75,7 @@ void setup()
       NULL,        /* Task input parameter */
       0,           /* Priority of the task */
       &taskSendData,      /* Task handle. */
-      1);          /* Core where the task should run */
+      0);          /* Core where the task should run */
 }
 
 void connect()
@@ -126,6 +131,12 @@ void loop()
 {
 
   // publish a message roughly every second.
+
+
+  // // mqttClient.publish("xfmormermon", "buffer");
+
+  // // publish a message roughly every second.
+
   // Serial.println("Sleeping 10s");
   // delay(10000);
 }
@@ -169,8 +180,9 @@ void setupEnergyMonitor()
 // readEICData: reads the EIC and inserts data into queue
 void readEICData(void *pvParameters)
 {
-  Serial.print("Task1 running on core ");
+  Serial.print("Task0 running on core ");
   Serial.println(xPortGetCoreID());
+  delay(2000);
 
   // Attach interrupt for reading data every one second
   readEICTimer = timerBegin(0, 80, true);
@@ -188,6 +200,7 @@ void sendSensorDataOverMQTT(void *pvParameters)
 {
   Serial.print("Task1 running on core ");
   Serial.println(xPortGetCoreID());
+  delay(3000);
   StaticJsonDocument<512> mqttJsonData;
   JsonObject tempObj = mqttJsonData.createNestedObject("temps");
   JsonObject powerObj = mqttJsonData.createNestedObject("power");
@@ -197,6 +210,7 @@ void sendSensorDataOverMQTT(void *pvParameters)
   int emptySpaces = uxQueueSpacesAvailable(eicDataQueue);
   for (;;)
   {
+    // Serial.println("hello from Sensor data");
     if (messagesWaiting > 2)
     {
       xQueueReceive(eicDataQueue, &mqttSensorData, portMAX_DELAY);
@@ -223,11 +237,11 @@ void sendSensorDataOverMQTT(void *pvParameters)
 
       char buffer[512];
       size_t n = serializeJson(mqttJsonData, buffer);
+      delay(50);
       mqttClient.publish("xfmormermon/", buffer, n);
     }
-
+    delay(1000); // <- fixes some issues with WiFi stability
     mqttClient.loop();
-    delay(10); // <- fixes some issues with WiFi stability
 
     if (!mqttClient.connected())
     {
@@ -249,12 +263,12 @@ void IRAM_ATTR ReadData(){
   if (timesEnteredISR == 60)
   {
     timesEnteredISR = 0;
-    monitorTempSensors.cabinet.requestTemperatures();
-    monitorTempSensors.oil.requestTemperatures();
+    // monitorTempSensors.cabinet.requestTemperatures();
+    // monitorTempSensors.oil.requestTemperatures();
     // get cabinet temp sensor data
-    sensorData.temps.cabinet = monitorTempSensors.cabinet.getTempC(cabinetTempSensorAddr);
-    // get oil temp sensor data
-    sensorData.temps.oil =  monitorTempSensors.oil.getTempC(oilTempSensorAddr);
+    // sensorData.temps.cabinet = monitorTempSensors.cabinet.getTempC(cabinetTempSensorAddr);
+    // // get oil temp sensor data
+    // sensorData.temps.oil =  monitorTempSensors.oil.getTempC(oilTempSensorAddr);
   }
   
 
@@ -268,11 +282,11 @@ void IRAM_ATTR ReadData(){
   // sensorData.energy.exp =
 
   xQueueSend(eicDataQueue, &sensorData, portMAX_DELAY);
-
 }
 
 void setColor(int R, int G, int B) {
   analogWrite(PIN_RED,   R);
   analogWrite(PIN_GREEN, G);
   analogWrite(PIN_BLUE,  B);
+  Serial.println("hello from ISR");
 }
