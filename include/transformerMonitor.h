@@ -77,7 +77,6 @@ ATM90E26_IC eic;
 ATM90E36 ic;
 ATM90E36_IC eic(ctLine, ic);
 
-ATM90E36_IC SetupEic(ctLine, ic);
 
 #endif
 
@@ -155,6 +154,15 @@ void sendSensorDataOverMQTT( void * pvParameters );
 hw_timer_t *readEICTimer = NULL;
 void IRAM_ATTR ReadData();
 // End timer variable and function
+
+// LED pins
+#define PIN_RED    23 // GPIO23
+#define PIN_GREEN  22 // GPIO22
+#define PIN_BLUE   21 // GPIO21
+
+// LED color Function
+void setColor(int R, int G, int B);
+
 
 struct xformerMonConfigData {
   char *wifiSsid;

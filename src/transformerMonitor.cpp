@@ -17,6 +17,13 @@ void setupEnergyMonitor();
 // const char* test_client_cert = "";  //to verify the client
 void setup()
 {
+  pinMode(PIN_RED,   OUTPUT);
+  pinMode(PIN_GREEN, OUTPUT);
+  pinMode(PIN_BLUE,  OUTPUT);
+
+  // set LED to Red - FF0000
+  setColor(255, 0, 0);
+  delay(10000);
   Serial.begin(9600);
 
   eicDataQueue = xQueueCreate( 50, sizeof( xformerMonitorData ) );
@@ -44,14 +51,18 @@ void setup()
   // monitorTempSensors.oil.getAddress(oilTempSensorAddr, 0);
   // monitorTempSensors.cabinet.getAddress(cabinetTempSensorAddr, 0);
 
+
+
   setupMQTTClient();
 
   setupEnergyMonitor();
 
+  // set LED color
+  setColor(0, 0, 255);
   xTaskCreatePinnedToCore(
       readEICData, /* Function to implement the task */
       "Read EIC data",     /* Name of the task */
-      10000,       /* Stack size in words */
+      100000,       /* Stack size in words */
       NULL,        /* Task input parameter */
       0,           /* Priority of the task */
       &taskReadEIC,      /* Task handle. */
@@ -60,7 +71,7 @@ void setup()
   xTaskCreatePinnedToCore(
       sendSensorDataOverMQTT, /* Function to implement the task */
       "Send sensor data over MQTT",     /* Name of the task */
-      10000,       /* Stack size in words */
+      100000,       /* Stack size in words */
       NULL,        /* Task input parameter */
       0,           /* Priority of the task */
       &taskSendData,      /* Task handle. */
@@ -119,10 +130,13 @@ void messageReceived(String &topic, String &payload)
 void loop()
 {
 
+  // publish a message roughly every second.
+
 
   // // mqttClient.publish("xfmormermon", "buffer");
 
   // // publish a message roughly every second.
+
   // Serial.println("Sleeping 10s");
   // delay(10000);
 }
@@ -268,5 +282,11 @@ void IRAM_ATTR ReadData(){
   // sensorData.energy.exp =
 
   xQueueSend(eicDataQueue, &sensorData, portMAX_DELAY);
+}
+
+void setColor(int R, int G, int B) {
+  analogWrite(PIN_RED,   R);
+  analogWrite(PIN_GREEN, G);
+  analogWrite(PIN_BLUE,  B);
   Serial.println("hello from ISR");
 }
