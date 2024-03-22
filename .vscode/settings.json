@@ -16,5 +16,6 @@
         "ctime": "cpp",
         "*.tcc": "cpp"
     },
-    "julia.environmentPath": "/home/andrew/Projects/SeniorDesign/esp32-tm-code"
+    "julia.environmentPath": "/home/andrew/Projects/SeniorDesign/esp32-tm-code",
+    "frontMatter.content.pageFolders": []
 }
