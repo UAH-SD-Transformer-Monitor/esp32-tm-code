@@ -70,7 +70,7 @@ ATM90E26_IC eic;
 // extract the ATM90E36 CT LINE from its macro
 #ifdef TM_ATM90E36_CT_LINE
   char const ctLine = (char) STR(TM_ATM90E36_CT_LINE);
-#else
+#else // if nothing is defined, use 'A' as the default value
   char const ctLine = 'A';
 #endif
 #include <ATM90E36_IC.h>
@@ -80,12 +80,12 @@ ATM90E36_IC eic(ctLine, ic);
 
 #endif
 
-// we are using the ESP32's MAC address to provide a unique ID
-String client_id = "xformermon-";
+// we are using the transformer's name to provide a unique ID
+String client_id = "name-of-transformer";
 
 
 
-// GPIO where the DS18B20 is connected to
+// GPIO pins where the DS18B20 sensors are connected
 const int oilTempBus = 4;
 const int cabinetTempBus = 9;
 
@@ -104,9 +104,9 @@ OneWire cabinetTempBusOneWire(cabinetTempBus);
 DallasTemperature oilTempSensor(&oilTempBusOneWire);
 DallasTemperature cabinetTempSensor(&cabinetTempBusOneWire);
 
+// temp sensor objects
 tempSensors monitorTempSensors{oilTempSensor, cabinetTempSensor};
 
-StaticJsonDocument<256> dataStore[60];
 time_t now;
 
 // Data structs for queue
@@ -138,7 +138,7 @@ struct xformerMonitorData {
 // Global to be used in ISR
 xformerMonitorData sensorData;
 
-// Variables for tasks
+// Variables for tasks and queue
 TaskHandle_t taskReadEIC;
 TaskHandle_t taskSendData;
 
@@ -161,6 +161,9 @@ void IRAM_ATTR ReadData();
 #define PIN_BLUE   21 // GPIO21
 
 // LED color Function
+// Red   - 0 to 255
+// Green - 0 to 255
+// Blue  - 0 to 255
 void setColor(int R, int G, int B);
 
 

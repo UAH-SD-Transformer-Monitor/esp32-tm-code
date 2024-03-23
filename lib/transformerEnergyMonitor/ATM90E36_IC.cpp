@@ -17,7 +17,7 @@
   }
 
 void ATM90E36_IC::begin(){
-  this->eic->begin(5, 0x003C, 0x100, 0x100, 0x100,0x100, 0x100, 0x100);
+  this->eic->begin(5, 0x003C, 0x1000, 0x1000, 0x1000,0x1000, 0x1000, 0x1000);
 }
   double ATM90E36_IC::GetLineVoltage()
   {
@@ -26,8 +26,10 @@ void ATM90E36_IC::begin(){
     {
     case 'A':
       lv = eic->GetLineVoltageA();
+    break;
     case 'B':
       lv = eic->GetLineVoltageB();
+    break;
     case 'C':
       lv = eic->GetLineVoltageC();
     break;

@@ -17,6 +17,7 @@ void setupEnergyMonitor();
 // const char* test_client_cert = "";  //to verify the client
 void setup()
 {
+  // set LED pins
   pinMode(PIN_RED,   OUTPUT);
   pinMode(PIN_GREEN, OUTPUT);
   pinMode(PIN_BLUE,  OUTPUT);
@@ -26,6 +27,7 @@ void setup()
   delay(10000);
   Serial.begin(9600);
 
+  // create data queue
   eicDataQueue = xQueueCreate( 50, sizeof( xformerMonitorData ) );
   if (eicDataQueue == 0)
   {
@@ -240,7 +242,7 @@ void sendSensorDataOverMQTT(void *pvParameters)
       delay(50);
       mqttClient.publish("xfmormermon/", buffer, n);
     }
-    delay(1000); // <- fixes some issues with WiFi stability
+    delay(100); // <- fixes some issues with WiFi stability
     mqttClient.loop();
 
     if (!mqttClient.connected())
@@ -278,15 +280,16 @@ void IRAM_ATTR ReadData(){
   sensorData.timeInfo = gmtime(&now);
 
   sensorData.lineVoltage = eic.GetLineVoltage();
+  sensorData.lineCurrent = eic.GetLineCurrent();
   sensorData.neutralCurrent = eic.GetLineCurrentN();
-  // sensorData.energy.exp =
+  sensorData.power.factor = eic.GetPowerFactor();
 
   xQueueSend(eicDataQueue, &sensorData, portMAX_DELAY);
+  Serial.println("hello from ISR");
 }
 
 void setColor(int R, int G, int B) {
   analogWrite(PIN_RED,   R);
   analogWrite(PIN_GREEN, G);
   analogWrite(PIN_BLUE,  B);
-  Serial.println("hello from ISR");
 }
