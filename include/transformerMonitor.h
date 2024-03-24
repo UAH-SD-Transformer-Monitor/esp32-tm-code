@@ -107,6 +107,7 @@ DallasTemperature cabinetTempSensor(&cabinetTempBusOneWire);
 // temp sensor objects
 tempSensors monitorTempSensors{oilTempSensor, cabinetTempSensor};
 
+// global time variable
 time_t now;
 
 // Data structs for queue
