@@ -165,10 +165,16 @@ void IRAM_ATTR ReadData();
 // Red   - 0 to 255
 // Green - 0 to 255
 // Blue  - 0 to 255
-void setColor(int R, int G, int B);
+void setLEDColor(int R, int G, int B);
 
-// connect to WiFI
+// connect to WiFI and MQTT
 void connect();
+
+// function that sets up the MQTT client
+void setupMQTTClient();
+
+// function to set up and initialize the energy monitor
+void setupEnergyMonitor();
 
 struct xformerMonConfigData {
   char *wifiSsid;

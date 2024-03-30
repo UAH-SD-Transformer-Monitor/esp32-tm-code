@@ -6,12 +6,6 @@
 
 unsigned long lastMillis = 0;
 
-// function that sets up the MQTT client
-void setupMQTTClient();
-
-// function to set up and initialize the energy monitor
-void setupEnergyMonitor();
-
 // You can use x.509 client certificates if you want
 // const char* test_client_key = "";   //to verify the client
 // const char* test_client_cert = "";  //to verify the client
@@ -23,7 +17,7 @@ void setup()
   pinMode(PIN_BLUE,  OUTPUT);
 
   // set LED to Red - FF0000
-  setColor(255, 0, 0);
+  setLEDColor(255, 0, 0);
   delay(1000);
   Serial.begin(9600);
 
@@ -61,7 +55,7 @@ void setup()
   
 
   // set LED color
-  setColor(0, 0, 255);
+  setLEDColor(0, 0, 255);
   // BaseType_t test = xTaskCreatePinnedToCore(
   //     sendSensorDataOverMQTT, /* Function to implement the task */
   //     "Send sensor data over MQTT",     /* Name of the task */
@@ -96,6 +90,7 @@ void connect()
   // attempt to connect to Wifi network:
   while (WiFi.status() != WL_CONNECTED)
   {
+    setLEDColor(255, 0, 0);
     Serial.print(".");
     // wait 1 second for re-trying
     delay(3000);
@@ -103,21 +98,22 @@ void connect()
   Serial.print("Connected to ");
   Serial.println(ssid);
 
+
   Serial.print("Username: ");
   Serial.println(mqttUser);
 
   Serial.print("\nconnecting...");
 
-  Serial.print("ESP.getFreeHeap() = ");
-  Serial.println(ESP.getFreeHeap());
   // we are using the ESP32's MAC address to provide a unique ID
   Serial.printf("The client %s connects to the public mqtt broker\n", client_id);
   if (mqttClient.connect(client_id, mqttUser, mqttPass))
   {
+    setLEDColor(0, 255, 0);
   }
   else
   {
-
+    // set LED color
+    setLEDColor(255, 0, 0);
     Serial.print("failed with state ");
     Serial.print(mqttClient.state());
     delay(2000);
@@ -138,7 +134,6 @@ void messageReceived(String &topic, String &payload)
 
 void loop()
 {
-
   Serial.print("Task1 running on core ");
   Serial.println(xPortGetCoreID());
   delay(3000);
@@ -158,7 +153,7 @@ void loop()
       char timeBuffer[32];
       strftime(timeBuffer, sizeof(timeBuffer), "%FT%TZ", mqttSensorData.timeInfo);
 
-      mqttJsonData["deviceId"] = "esp32-random-id";
+      mqttJsonData["deviceId"] = client_id;
       mqttJsonData["time"] = timeBuffer;
       mqttJsonData["meterStatus"] = mqttSensorData.meterStatus;
       mqttJsonData["sysStatus"] = mqttSensorData.sysStatus;
@@ -176,12 +171,12 @@ void loop()
       energyObj["export"] = mqttSensorData.energy.exp;
       energyObj["import"] = mqttSensorData.energy.import;
 
-      char buffer[512];
-      size_t n = serializeJson(mqttJsonData, buffer);
-      vTaskDelay(50);
-      mqttClient.publish("xfmormermon/", buffer, n);
+      char mqttDataBuffer[512];
+      size_t n = serializeJson(mqttJsonData, mqttDataBuffer);
+      delay(50);
+      mqttClient.publish("xfmormermon/", mqttDataBuffer, n);
     }
-    vTaskDelay(100); // <- fixes some issues with WiFi stability
+    delay(10); // <- fixes some issues with WiFi stability
     mqttClient.loop();
 
     if (!mqttClient.connected())
@@ -247,63 +242,6 @@ void readEICData(void *pvParameters)
   }
 }
 
-// sendSensorDataOverMQTT: reads the EIC and inserts data into queue
-void sendSensorDataOverMQTT(void *pvParameters)
-{
-  Serial.print("Task1 running on core ");
-  Serial.println(xPortGetCoreID());
-  vTaskDelay(3000);
-  StaticJsonDocument<512> mqttJsonData;
-  JsonObject tempObj = mqttJsonData.createNestedObject("temps");
-  JsonObject powerObj = mqttJsonData.createNestedObject("power");
-  JsonObject energyObj = mqttJsonData.createNestedObject("energy");
-  xformerMonitorData mqttSensorData;
-  int messagesWaiting = uxQueueMessagesWaiting(eicDataQueue);
-  int emptySpaces = uxQueueSpacesAvailable(eicDataQueue);
-  for (;;)
-  {
-    // Serial.println("hello from Sensor data");
-    if (messagesWaiting > 2)
-    {
-      xQueueReceive(eicDataQueue, &mqttSensorData, portMAX_DELAY);
-      char timeBuffer[32];
-      strftime(timeBuffer, sizeof(timeBuffer), "%FT%TZ", mqttSensorData.timeInfo);
-
-      mqttJsonData["deviceId"] = "esp32-random-id";
-      mqttJsonData["time"] = timeBuffer;
-      mqttJsonData["meterStatus"] = mqttSensorData.meterStatus;
-      mqttJsonData["sysStatus"] = mqttSensorData.sysStatus;
-      mqttJsonData["current"] = mqttSensorData.lineCurrent;
-      mqttJsonData["neutralCurrent"] = mqttSensorData.neutralCurrent;
-      mqttJsonData["voltage"] = mqttSensorData.lineCurrent;
-      powerObj["active"] = mqttSensorData.power.active;
-      powerObj["apparent"] = mqttSensorData.power.apparent;
-      powerObj["factor"] = mqttSensorData.power.factor;
-      powerObj["reactive"] = mqttSensorData.power.reactive;
-
-      tempObj["oil"] = mqttSensorData.temps.oil;
-      tempObj["cabinet"] = mqttSensorData.temps.cabinet;
-      
-      energyObj["export"] = mqttSensorData.energy.exp;
-      energyObj["import"] = mqttSensorData.energy.import;
-
-      char buffer[512];
-      size_t n = serializeJson(mqttJsonData, buffer);
-      vTaskDelay(50);
-      mqttClient.publish("xfmormermon/", buffer, n);
-    }
-    vTaskDelay(100); // <- fixes some issues with WiFi stability
-    mqttClient.loop();
-
-    if (!mqttClient.connected())
-    {
-      connect();
-    }
-    messagesWaiting = uxQueueMessagesWaiting(eicDataQueue);
-    emptySpaces = uxQueueMessagesWaiting(eicDataQueue);
-  }
-
-}
 
 void IRAM_ATTR ReadData(){
   // Count the number of times the ISR has been entered
@@ -315,12 +253,12 @@ void IRAM_ATTR ReadData(){
   if (timesEnteredISR == 60)
   {
     timesEnteredISR = 0;
-    // monitorTempSensors.cabinet.requestTemperatures();
-    // monitorTempSensors.oil.requestTemperatures();
+    monitorTempSensors.cabinet.requestTemperatures();
+    monitorTempSensors.oil.requestTemperatures();
     // get cabinet temp sensor data
-    // sensorData.temps.cabinet = monitorTempSensors.cabinet.getTempC(cabinetTempSensorAddr);
-    // // get oil temp sensor data
-    // sensorData.temps.oil =  monitorTempSensors.oil.getTempC(oilTempSensorAddr);
+    sensorData.temps.cabinet = monitorTempSensors.cabinet.getTempC(cabinetTempSensorAddr);
+    // get oil temp sensor data
+    sensorData.temps.oil =  monitorTempSensors.oil.getTempC(oilTempSensorAddr);
   }
   
 
@@ -338,7 +276,7 @@ void IRAM_ATTR ReadData(){
   Serial.println("hello from ISR");
 }
 
-void setColor(int R, int G, int B) {
+void setLEDColor(int R, int G, int B) {
   analogWrite(PIN_RED,   R);
   analogWrite(PIN_GREEN, G);
   analogWrite(PIN_BLUE,  B);
