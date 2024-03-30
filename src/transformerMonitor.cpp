@@ -24,7 +24,7 @@ void setup()
 
   // set LED to Red - FF0000
   setColor(255, 0, 0);
-  delay(10000);
+  delay(1000);
   Serial.begin(9600);
 
   // create data queue
@@ -58,28 +58,33 @@ void setup()
   setupMQTTClient();
 
   setupEnergyMonitor();
+  
 
   // set LED color
   setColor(0, 0, 255);
-  xTaskCreatePinnedToCore(
+  // BaseType_t test = xTaskCreatePinnedToCore(
+  //     sendSensorDataOverMQTT, /* Function to implement the task */
+  //     "Send sensor data over MQTT",     /* Name of the task */
+  //     50000,       /* Stack size in words */
+  //     NULL,        /* Task input parameter */
+  //     0,           /* Priority of the task */
+  //     &taskSendData,      /* Task handle. */
+  //     0);          /* Core where the task should run */
+  // Serial.println(test);
+  delay(500);
+ BaseType_t eicTask = xTaskCreatePinnedToCore(
       readEICData, /* Function to implement the task */
       "Read EIC data",     /* Name of the task */
-      100000,       /* Stack size in words */
+      20000,       /* Stack size in words */
       NULL,        /* Task input parameter */
       0,           /* Priority of the task */
       &taskReadEIC,      /* Task handle. */
-      1);          /* Core where the task should run */
-
-  xTaskCreatePinnedToCore(
-      sendSensorDataOverMQTT, /* Function to implement the task */
-      "Send sensor data over MQTT",     /* Name of the task */
-      100000,       /* Stack size in words */
-      NULL,        /* Task input parameter */
-      0,           /* Priority of the task */
-      &taskSendData,      /* Task handle. */
       0);          /* Core where the task should run */
+  Serial.println(eicTask);
 }
 
+// connect connects to the WiFi and restarts it
+// TODO: set LED red when not connected, green when connected
 void connect()
 {
 
@@ -103,14 +108,16 @@ void connect()
 
   Serial.print("\nconnecting...");
 
+  Serial.print("ESP.getFreeHeap() = ");
+  Serial.println(ESP.getFreeHeap());
   // we are using the ESP32's MAC address to provide a unique ID
-  client_id += String(WiFi.macAddress());
-  Serial.printf("The client %s connects to the public mqtt broker\n", client_id.c_str());
-  if (mqttClient.connect(client_id.c_str(), mqttUser, mqttPass))
+  Serial.printf("The client %s connects to the public mqtt broker\n", client_id);
+  if (mqttClient.connect(client_id, mqttUser, mqttPass))
   {
   }
   else
   {
+
     Serial.print("failed with state ");
     Serial.print(mqttClient.state());
     delay(2000);
@@ -132,15 +139,58 @@ void messageReceived(String &topic, String &payload)
 void loop()
 {
 
-  // publish a message roughly every second.
+  Serial.print("Task1 running on core ");
+  Serial.println(xPortGetCoreID());
+  delay(3000);
+  StaticJsonDocument<512> mqttJsonData;
+  JsonObject tempObj = mqttJsonData.createNestedObject("temps");
+  JsonObject powerObj = mqttJsonData.createNestedObject("power");
+  JsonObject energyObj = mqttJsonData.createNestedObject("energy");
+  xformerMonitorData mqttSensorData;
+  int messagesWaiting = uxQueueMessagesWaiting(eicDataQueue);
+  int emptySpaces = uxQueueSpacesAvailable(eicDataQueue);
+  for (;;)
+  {
+    // Serial.println("hello from Sensor data");
+    if (messagesWaiting > 2)
+    {
+      xQueueReceive(eicDataQueue, &mqttSensorData, portMAX_DELAY);
+      char timeBuffer[32];
+      strftime(timeBuffer, sizeof(timeBuffer), "%FT%TZ", mqttSensorData.timeInfo);
 
+      mqttJsonData["deviceId"] = "esp32-random-id";
+      mqttJsonData["time"] = timeBuffer;
+      mqttJsonData["meterStatus"] = mqttSensorData.meterStatus;
+      mqttJsonData["sysStatus"] = mqttSensorData.sysStatus;
+      mqttJsonData["current"] = mqttSensorData.lineCurrent;
+      mqttJsonData["neutralCurrent"] = mqttSensorData.neutralCurrent;
+      mqttJsonData["voltage"] = mqttSensorData.lineCurrent;
+      powerObj["active"] = mqttSensorData.power.active;
+      powerObj["apparent"] = mqttSensorData.power.apparent;
+      powerObj["factor"] = mqttSensorData.power.factor;
+      powerObj["reactive"] = mqttSensorData.power.reactive;
 
-  // // mqttClient.publish("xfmormermon", "buffer");
+      tempObj["oil"] = mqttSensorData.temps.oil;
+      tempObj["cabinet"] = mqttSensorData.temps.cabinet;
+      
+      energyObj["export"] = mqttSensorData.energy.exp;
+      energyObj["import"] = mqttSensorData.energy.import;
 
-  // // publish a message roughly every second.
+      char buffer[512];
+      size_t n = serializeJson(mqttJsonData, buffer);
+      vTaskDelay(50);
+      mqttClient.publish("xfmormermon/", buffer, n);
+    }
+    vTaskDelay(100); // <- fixes some issues with WiFi stability
+    mqttClient.loop();
 
-  // Serial.println("Sleeping 10s");
-  // delay(10000);
+    if (!mqttClient.connected())
+    {
+      connect();
+    }
+    messagesWaiting = uxQueueMessagesWaiting(eicDataQueue);
+    emptySpaces = uxQueueMessagesWaiting(eicDataQueue);
+  }
 }
 
 void setupMQTTClient()
@@ -184,7 +234,7 @@ void readEICData(void *pvParameters)
 {
   Serial.print("Task0 running on core ");
   Serial.println(xPortGetCoreID());
-  delay(2000);
+  vTaskDelay(2000);
 
   // Attach interrupt for reading data every one second
   readEICTimer = timerBegin(0, 80, true);
@@ -202,7 +252,7 @@ void sendSensorDataOverMQTT(void *pvParameters)
 {
   Serial.print("Task1 running on core ");
   Serial.println(xPortGetCoreID());
-  delay(3000);
+  vTaskDelay(3000);
   StaticJsonDocument<512> mqttJsonData;
   JsonObject tempObj = mqttJsonData.createNestedObject("temps");
   JsonObject powerObj = mqttJsonData.createNestedObject("power");
@@ -239,10 +289,10 @@ void sendSensorDataOverMQTT(void *pvParameters)
 
       char buffer[512];
       size_t n = serializeJson(mqttJsonData, buffer);
-      delay(50);
+      vTaskDelay(50);
       mqttClient.publish("xfmormermon/", buffer, n);
     }
-    delay(100); // <- fixes some issues with WiFi stability
+    vTaskDelay(100); // <- fixes some issues with WiFi stability
     mqttClient.loop();
 
     if (!mqttClient.connected())

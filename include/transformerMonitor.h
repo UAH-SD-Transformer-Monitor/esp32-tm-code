@@ -81,7 +81,7 @@ ATM90E36_IC eic(ctLine, ic);
 #endif
 
 // we are using the transformer's name to provide a unique ID
-String client_id = "name-of-transformer";
+char* client_id = "name-of-transformer";
 
 
 
@@ -167,6 +167,8 @@ void IRAM_ATTR ReadData();
 // Blue  - 0 to 255
 void setColor(int R, int G, int B);
 
+// connect to WiFI
+void connect();
 
 struct xformerMonConfigData {
   char *wifiSsid;
