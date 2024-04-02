@@ -93,7 +93,7 @@ void connect()
     setLEDColor(255, 0, 0);
     Serial.print(".");
     // wait 1 second for re-trying
-    delay(3000);
+    delay(100);
   }
   Serial.print("Connected to ");
   Serial.println(ssid);

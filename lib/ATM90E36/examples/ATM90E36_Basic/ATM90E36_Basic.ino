@@ -11,39 +11,19 @@
   THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 #include <SPI.h>
-#define DEBUG_SERIAL
 #include <ATM90E36.h>
 
-ATM90E36 eic;
+ATM90E36 eic(10);
 
 void setup() {
   /* Initialize the serial port to host */
-  /*
-  The ATM90E36 has to be setup via SPI.
-   SPI for the ESP32:
-    - CLK: 18
-    - MISO: 19
-    - MOSI: 23
-    - CS: 5
-  */
-  delay(2000);
-  Serial.begin(9600);
+  Serial.begin(115200);
   while (!Serial) {
     ; // wait for serial port to connect. Needed for native USB
   }
-
   Serial.println("Start ATM90E36");
   /*Initialise the ATM90E36 + SPI port */
-  // ss pin is the first parameter
-  SPI.begin(SCK, MISO, MOSI, SS);
-  delay(1000);
-  /*
-    pin
-    line frequency
-    PgaGain
-
-  */
-  eic.begin(5, 0x0001, 0x00, 0xC172, 0x1200,0, 0, 0);
+  eic.begin();
   delay(1000);
 }
 
@@ -81,6 +61,5 @@ void loop() {
   freq=eic.GetFrequency();
   delay(10);
   Serial.println("f"+String(freq)+"Hz");
-  Serial.println("Waiting 5s");
-  delay(2000);
+  delay(1000);
 }
