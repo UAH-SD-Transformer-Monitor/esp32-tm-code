@@ -17,7 +17,16 @@
   }
 
 void ATM90E36_IC::begin(){
-  this->eic->begin(5, 0x003C, 0x1000, 0x1000, 0x1000,0x1000, 0x1000, 0x1000);
+  /*
+    CS pin - 5 for ESP32
+    Line Frequency - 60 Hz for NA - 4485
+    PGA Gain - 
+    Current gain - 
+    Note: values are adjusted from https://github.com/DitroniX/IPEM-IoT-Power-Energy-Monitor/blob/main/Code/IPEM_1_Test_Code_ATM90E32_ATM90E36/include/IPEM_Hardware.h
+  */
+ unsigned short PgaGain = 0b0101010101111111;
+ unsigned short VoltageGain = 19700; 
+  this->eic->begin(5, 4485, PgaGain, VoltageGain, 0x1000,0x1000, 0x1000, 0x1000);
 }
   double ATM90E36_IC::GetLineVoltage()
   {
