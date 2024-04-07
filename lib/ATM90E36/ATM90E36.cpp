@@ -335,6 +335,56 @@ unsigned short  ATM90E36::GetMeterStatus1() {
   return CommEnergyIC(READ, EnStatus1, 0xFFFF);
 }
 
+double ATM90E36::CalibrateVI(unsigned short reg, unsigned short actualVal)
+{
+  // input the Voltage or Current register, and the actual value that it should be
+  // actualVal can be from a calibration meter or known value from a power supply
+  uint16_t gain, val, m, gainReg;
+  // sample the reading
+  val = CommEnergyIC(READ, reg, 0xFFFF);
+  val += CommEnergyIC(READ, reg, 0xFFFF);
+  val += CommEnergyIC(READ, reg, 0xFFFF);
+  val += CommEnergyIC(READ, reg, 0xFFFF);
+
+  // get value currently in gain register
+  switch (reg)
+  {
+  case UrmsA:
+  {
+    gainReg = UgainA;
+  }
+  case UrmsB:
+  {
+    gainReg = UgainB;
+  }
+  case UrmsC:
+  {
+    gainReg = UgainC;
+  }
+  case IrmsA:
+  {
+    gainReg = IgainA;
+  }
+  case IrmsB:
+  {
+    gainReg = IgainB;
+  }
+  case IrmsC:
+  {
+    gainReg = IgainC;
+  }
+  }
+
+  gain = CommEnergyIC(READ, gainReg, 0xFFFF);
+  m = actualVal;
+  m = ((m * gain) / val);
+  gain = m;
+
+  // write new value to gain register
+  CommEnergyIC(WRITE, gainReg, gain);
+
+  return (gain);
+} // ATM90E3x::CalibrateVI
 
 /* Checksum Error Function */
 bool ATM90E36::calibrationError() {

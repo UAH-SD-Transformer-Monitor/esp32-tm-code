@@ -21,7 +21,7 @@ void setup() {
   /*
   The ATM90E36 has to be setup via SPI.
    SPI for the ESP32:
-    - CLK: 18
+    - CLK: 33
     - MISO: 19
     - MOSI: 23
     - CS: 5
@@ -38,16 +38,18 @@ void setup() {
   SPI.begin(SCK, MISO, MOSI, SS);
   delay(1000);
   /*
-    pin
-    line frequency
-    PgaGain
-
+    CS pin - 33 for ESP32
+    Line Frequency - 60 Hz for NA - 5509 - see MMode0 section (4.2.3) in data sheet for ATM90E36
+    PGA Gain - 
+    Current gain - 
+    Note: values are adjusted from https://github.com/DitroniX/IPEM-IoT-Power-Energy-Monitor/blob/main/Code/IPEM_1_Test_Code_ATM90E32_ATM90E36/include/IPEM_Hardware.h
   */
-  eic.begin(5, 0x0001, 0x00, 0xC172, 0x1200,0, 0, 0);
+  unsigned short PgaGain = 0x5555; 
+  unsigned short frequency = 0b0001010110000101;
+  unsigned short VoltageGain = 19800;
+  eic.begin(SS, frequency, PgaGain, VoltageGain, 0x1000,0x1000, 0x1000, 0x1000);
   delay(1000);
 }
-
-
 
 void loop() {
   
@@ -81,6 +83,6 @@ void loop() {
   freq=eic.GetFrequency();
   delay(10);
   Serial.println("f"+String(freq)+"Hz");
-  Serial.println("Waiting 5s");
-  delay(2000);
+  Serial.println("Waiting 1s");
+  delay(1000);
 }

@@ -313,5 +313,6 @@ class ATM90E36
 
 		/* Checksum Function */
 		bool calibrationError();
+		double CalibrateVI(unsigned short reg, unsigned short actualVal);
 	};
 #endif

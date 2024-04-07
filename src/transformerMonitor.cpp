@@ -146,17 +146,24 @@ void loop()
   int emptySpaces = uxQueueSpacesAvailable(eicDataQueue);
   for (;;)
   {
-    // Serial.println("hello from Sensor data");
+    
     if (messagesWaiting > 2)
     {
       xQueueReceive(eicDataQueue, &mqttSensorData, portMAX_DELAY);
       char timeBuffer[32];
       strftime(timeBuffer, sizeof(timeBuffer), "%FT%TZ", mqttSensorData.timeInfo);
-
+      // Sensor is not working
+      if (mqttSensorData.sys0Status == 6555 || mqttSensorData.sys0Status == 0)
+      {
+        setLEDColor(255,0,0);
+      } else {
+        setLEDColor(0,255,0);
+      }
+      
       mqttJsonData["deviceId"] = client_id;
       mqttJsonData["time"] = timeBuffer;
-      mqttJsonData["meterStatus"] = mqttSensorData.meterStatus;
-      mqttJsonData["sysStatus"] = mqttSensorData.sysStatus;
+      mqttJsonData["sys0Status"] = mqttSensorData.sys0Status;
+      mqttJsonData["sys1Status"] = mqttSensorData.sys1Status;
       mqttJsonData["current"] = mqttSensorData.lineCurrent;
       mqttJsonData["neutralCurrent"] = mqttSensorData.neutralCurrent;
       mqttJsonData["voltage"] = mqttSensorData.lineCurrent;
@@ -221,6 +228,8 @@ void setupEnergyMonitor()
   delay(1000);
   eic.begin();
 
+  
+
 #endif
 }
 
@@ -266,7 +275,8 @@ void IRAM_ATTR ReadData(){
   time(&now);
   // set {"time":"2021-05-04T13:13:04Z"}
   sensorData.timeInfo = gmtime(&now);
-
+sensorData.sys0Status = eic.GetMeterStatus0();
+sensorData.sys1Status = eic.GetMeterStatus1();
   sensorData.lineVoltage = eic.GetLineVoltage();
   sensorData.lineCurrent = eic.GetLineCurrent();
   sensorData.neutralCurrent = eic.GetLineCurrentN();

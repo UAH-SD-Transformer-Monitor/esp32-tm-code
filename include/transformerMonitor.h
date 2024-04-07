@@ -127,7 +127,7 @@ struct energyData {
 };
 
 struct xformerMonitorData {
-  unsigned short sysStatus, meterStatus;
+  unsigned short sys0Status, sys1Status;
   double lineCurrent, neutralCurrent, lineVoltage, phase;
   tm *timeInfo;
   tempData temps;
