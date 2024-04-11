@@ -79,7 +79,7 @@ if sslEnabled:
       cn = (cert_components.get(b'CN')).decode('utf-8')
     else:
       cn = cert_components.get('CN')
-    print('Centificate {0} - CN: {1}'.format(index, cn))
+    print('Certificate {0} - CN: {1}'.format(index, cn))
 
     try:
       temp_certname = '{0}_{1}.crt'.format("transformerMonitorServerCert", index)

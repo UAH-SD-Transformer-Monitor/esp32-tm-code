@@ -462,11 +462,33 @@ void ATM90E36::begin(int pin, unsigned short lineFreq, unsigned short pgagain, u
   _pgagain = pgagain; //PGA Gain for current channels
   _ugain = ugain; //voltage rms gain
   _igainA = igainA; //CT1
-  _igainB = igainB; //CT2
-  _igainC = igainC; //CT3
-  _igainN = igainN; //N
+  _igainB = igainA; //CT2
+  _igainC = igainA; //CT3
+  _igainN = igainA; //N
   
   //pinMode(_energy_CS, OUTPUT); 
+
+   // calculation for voltage sag threshold - assumes we do not want to go under 90v for split phase and 190v otherwise
+  // determine proper low and high frequency threshold
+  unsigned short vSagTh;
+  unsigned short sagV;
+  unsigned short FreqHiThresh;
+  unsigned short FreqLoThresh;
+  if (_lineFreq == 4485 || _lineFreq == 5231)
+  {
+    sagV = 90;
+    FreqHiThresh = 61 * 100;
+    FreqLoThresh = 59 * 100;
+  }
+  else
+  {
+    sagV = 190;
+    FreqHiThresh = 51 * 100;
+    FreqLoThresh = 49 * 100;
+  }
+
+  vSagTh = (sagV * 100 * sqrt(2)) / (2 * _ugain / 32768);
+
 
   /* Enable SPI */
   //SPI.begin(); //moved to main program to assign different SPI pins
@@ -533,12 +555,12 @@ void ATM90E36::begin(int pin, unsigned short lineFreq, unsigned short pgagain, u
   CommEnergyIC(WRITE, IgainA, _igainA);      // A line current gain
   CommEnergyIC(WRITE, UoffsetA, 0x0000);    // A Voltage offset
   CommEnergyIC(WRITE, IoffsetA, 0x0000);    // A line current offset
-  CommEnergyIC(WRITE, UgainB, _ugain);      // B Voltage rms gain
-  CommEnergyIC(WRITE, IgainB, _igainB);      // B line current gain
+  CommEnergyIC(WRITE, UgainB, 0);      // B Voltage rms gain
+  CommEnergyIC(WRITE, IgainB, 0);      // B line current gain
   CommEnergyIC(WRITE, UoffsetB, 0x0000);    // B Voltage offset
   CommEnergyIC(WRITE, IoffsetB, 0x0000);    // B line current offset
-  CommEnergyIC(WRITE, UgainC, _ugain);      // C Voltage rms gain
-  CommEnergyIC(WRITE, IgainC, _igainC);      // C line current gain
+  CommEnergyIC(WRITE, UgainC, 0);      // C Voltage rms gain
+  CommEnergyIC(WRITE, IgainC, 0);      // C line current gain
   CommEnergyIC(WRITE, UoffsetC, 0x0000);    // C Voltage offset
   CommEnergyIC(WRITE, IoffsetC, 0x0000);    // C line current offset
   CommEnergyIC(WRITE, IgainN, _igainN);      // C line current gain

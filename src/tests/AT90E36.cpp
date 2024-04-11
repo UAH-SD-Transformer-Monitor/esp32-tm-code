@@ -26,6 +26,14 @@ void setup() {
     - MOSI: 23
     - CS: 5
   */
+  // PM0 - 17
+  // PM1 - 21
+  // set normal detection mode for ATM90E36
+  pinMode(21, OUTPUT);
+  pinMode(34, INPUT);
+  pinMode(17, OUTPUT);
+  digitalWrite(17, HIGH);
+  digitalWrite(21, HIGH);
   delay(2000);
   Serial.begin(9600);
   while (!Serial) {
@@ -37,17 +45,18 @@ void setup() {
   // ss pin is the first parameter
   SPI.begin(SCK, MISO, MOSI, SS);
   delay(1000);
+
   /*
     CS pin - 33 for ESP32
     Line Frequency - 60 Hz for NA - 5509 - see MMode0 section (4.2.3) in data sheet for ATM90E36
-    PGA Gain - 
+    PGA Gain - adjusts ADC gain for current and voltage
     Current gain - 
     Note: values are adjusted from https://github.com/DitroniX/IPEM-IoT-Power-Energy-Monitor/blob/main/Code/IPEM_1_Test_Code_ATM90E32_ATM90E36/include/IPEM_Hardware.h
   */
-  unsigned short PgaGain = 0x5555; 
+  unsigned short PgaGain = 0b1101010101010101;
   unsigned short frequency = 0b0001010110000101;
-  unsigned short VoltageGain = 19800;
-  eic.begin(SS, frequency, PgaGain, VoltageGain, 0x1000,0x1000, 0x1000, 0x1000);
+  unsigned short VoltageGain = 19900;
+  eic.begin(SS, frequency, PgaGain, VoltageGain, 0x100,0x100, 0x100, 0x100);
   delay(1000);
 }
 
@@ -83,6 +92,7 @@ void loop() {
   freq=eic.GetFrequency();
   delay(10);
   Serial.println("f"+String(freq)+"Hz");
-  Serial.println("Waiting 1s");
-  delay(1000);
+  // Serial.println("Warn: "+String(digitalRead(34)));
+  Serial.println("Waiting 6s");
+  delay(6000);
 }
