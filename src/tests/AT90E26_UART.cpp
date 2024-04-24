@@ -1,7 +1,7 @@
 #include <energyic_UART.h>
 
-#define PIN_SerialATM_RX       9   //RX pin, CHANGE IT according to your board
-#define PIN_SerialATM_TX       10   //TX pin, CHANGE IT according to your board
+#define PIN_SerialATM_RX       19   //RX pin, CHANGE IT according to your board
+#define PIN_SerialATM_TX       13   //TX pin, CHANGE IT according to your board
 
 HardwareSerial ATMSerial(1);        //1 = just hardware serial number. ESP32 supports 3 hardware serials. UART 0 usually for flashing.
 
@@ -35,7 +35,7 @@ void loop() {
   {
 	while (1);
   }
-    
+  
   Serial.println(eic.GetSysStatus(),HEX);
   delay(10);
   Serial.print("Meter Status:");

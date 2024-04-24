@@ -9,8 +9,6 @@
 #include <freertos/queue.h>
 #include <idf_additions.h>
 
-
-
 // Turn build flags (Macros) into strings
 #define ST(A) #A
 #define STR(A) ST(A)
@@ -49,7 +47,7 @@
   #include <transformerMonitorServerCert.h>
 #endif
 
-// pins for UART 2
+// pins for UART
 #define PIN_SerialATM_RX       16   //RX pin, CHANGE IT according to your board
 #define PIN_SerialATM_TX       17   //TX pin, CHANGE IT according to your board
 
@@ -59,26 +57,12 @@ void messageReceived(String &topic, String &payload);
 WiFiClientSecure wifiClient;
 PubSubClient mqttClient;
 
-// HardwareSerial ATMSerial(1);        //1 = just hardware serial number. ESP32 supports 3 hardware serials. UART 0 usually for flashing.
 
-#ifdef ATM90E26_EIC
-#include <ATM90E26_IC.h>
-  
-ATM90E26_IC eic;
+#include <energyic_UART.h>
 
-#else
-// extract the ATM90E36 CT LINE from its macro
-#ifdef TM_ATM90E36_CT_LINE
-  char const ctLine = (char) STR(TM_ATM90E36_CT_LINE);
-#else // if nothing is defined, use 'A' as the default value
-  char const ctLine = 'A';
-#endif
-#include <ATM90E36_IC.h>
-ATM90E36 ic;
-ATM90E36_IC eic(ctLine, ic);
+HardwareSerial ATMSerial(1);        //1 = just hardware serial number. ESP32 supports 3 hardware serials. UART 0 usually for flashing.
+ATM90E26_UART eic(&ATMSerial);
 
-
-#endif
 
 // we are using the transformer's name to provide a unique ID
 char* client_id = "name-of-transformer";
@@ -127,8 +111,9 @@ struct energyData {
 };
 
 struct xformerMonitorData {
-  unsigned short sys0Status, sys1Status;
-  double lineCurrent, neutralCurrent, lineVoltage, phase;
+  unsigned short sysStatus, meterStatus;
+  double neutralCurrent, lineVoltage, phase;
+  float lineCurrent;
   tm *timeInfo;
   tempData temps;
   powerData power;

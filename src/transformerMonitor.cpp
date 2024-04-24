@@ -40,12 +40,12 @@ void setup()
 #endif
 
   // Start the DS18B20 sensors
-  // monitorTempSensors.cabinet.begin();
-  // monitorTempSensors.oil.begin();
+  monitorTempSensors.cabinet.begin();
+  monitorTempSensors.oil.begin();
 
-  // // Get each DS18B20 sensors' address
-  // monitorTempSensors.oil.getAddress(oilTempSensorAddr, 0);
-  // monitorTempSensors.cabinet.getAddress(cabinetTempSensorAddr, 0);
+  // Get each DS18B20 sensors' address
+  monitorTempSensors.oil.getAddress(oilTempSensorAddr, 0);
+  monitorTempSensors.cabinet.getAddress(cabinetTempSensorAddr, 0);
 
 
 
@@ -153,17 +153,19 @@ void loop()
       char timeBuffer[32];
       strftime(timeBuffer, sizeof(timeBuffer), "%FT%TZ", mqttSensorData.timeInfo);
       // Sensor is not working
-      if (mqttSensorData.sys0Status == 6555 || mqttSensorData.sys0Status == 0)
+      if (mqttSensorData.sysStatus == 6555 || mqttSensorData.sysStatus == 0)
       {
         setLEDColor(255,0,0);
       } else {
         setLEDColor(0,255,0);
       }
       
+    
       mqttJsonData["deviceId"] = client_id;
       mqttJsonData["time"] = timeBuffer;
-      mqttJsonData["sys0Status"] = mqttSensorData.sys0Status;
-      mqttJsonData["sys1Status"] = mqttSensorData.sys1Status;
+      mqttJsonData["meterStatus"] = mqttSensorData.meterStatus;
+      mqttJsonData["sysStatus"] = mqttSensorData.sysStatus;
+
       mqttJsonData["current"] = mqttSensorData.lineCurrent;
       mqttJsonData["neutralCurrent"] = mqttSensorData.neutralCurrent;
       mqttJsonData["voltage"] = mqttSensorData.lineCurrent;
@@ -210,27 +212,12 @@ void setupMQTTClient()
 // depending on which monitor is used, the function will have call different functions
 void setupEnergyMonitor()
 {
-#ifdef ATM90E26_EIC
+  // Buad rate for UART serial
+  // Serial config
+  // Serial RX pin 
+  // Serial TX pin
+  ATMSerial.begin(9600, SERIAL_8N1, PIN_SerialATM_RX, PIN_SerialATM_TX);
 
-  ATM90E26_IC eic;
-
-#else
-  /* Initialize the serial port to host */
-  /*
-  The ATM90E36 has to be setup via SPI.
-   SPI for the ESP32:
-    - CLK: 18
-    - MISO: 19
-    - MOSI: 23
-    - CS: 5
-  */
-  SPI.begin(SCK, MISO, MOSI, SS);
-  delay(1000);
-  eic.begin();
-
-  
-
-#endif
 }
 
 // readEICData: reads the EIC and inserts data into queue
@@ -275,11 +262,17 @@ void IRAM_ATTR ReadData(){
   time(&now);
   // set {"time":"2021-05-04T13:13:04Z"}
   sensorData.timeInfo = gmtime(&now);
-sensorData.sys0Status = eic.GetMeterStatus0();
-sensorData.sys1Status = eic.GetMeterStatus1();
+  // in hex
+  sensorData.meterStatus = eic.GetMeterStatus();
+  
+  sensorData.sysStatus = eic.GetSysStatus();
+
   sensorData.lineVoltage = eic.GetLineVoltage();
+
   sensorData.lineCurrent = eic.GetLineCurrent();
-  sensorData.neutralCurrent = eic.GetLineCurrentN();
+  // convert lineVoltage and lineCurrent to floats
+  
+
   sensorData.power.factor = eic.GetPowerFactor();
 
   xQueueSend(eicDataQueue, &sensorData, portMAX_DELAY);
