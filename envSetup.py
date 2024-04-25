@@ -90,7 +90,7 @@ if sslEnabled:
     except IOError:
       print('Exception:  {0}'.format(IOError.strerror))
   # transform the certificate to a multi-line C-string variable
-  with open("transformerMonitorServerCert_2.crt", "r") as file:
+  with open("transformerMonitorServerCert_1.crt", "r") as file:
     for item in file:
       for i in item.splitlines():
         if i.startswith("-----END CERTIFICATE-----"):

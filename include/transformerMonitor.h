@@ -49,8 +49,8 @@
 //********* GPIO PINS ************* //
 
 // pins for UART
-#define PIN_SerialATM_RX       16   //RX pin, CHANGE IT according to your board
-#define PIN_SerialATM_TX       17   //TX pin, CHANGE IT according to your board
+#define PIN_SerialATM_RX       19   //RX pin, CHANGE IT according to your board
+#define PIN_SerialATM_TX       13   //TX pin, CHANGE IT according to your board
 
 // GPIO pins where the DS18B20 sensors are connected
 const int oilTempBus = 4;
