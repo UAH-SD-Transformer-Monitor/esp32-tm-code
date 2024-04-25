@@ -26,7 +26,6 @@ mqttServer = mqttConfig.get("server")
 mqttPort = mqttConfig.get("port")
 sensorConfig = monitorConfigFile.get("sensor")
 
-transformerLine = sensorConfig['config']['line'] 
 sslEnabled = monitorConfigFile["ssl"]['enabled']
 if not sslEnabled:
   mqttConfig["port"] = 1883
@@ -53,8 +52,7 @@ env.Append(CPPDEFINES=[
   ("TM_MQTT_PORT", mqttConfig.get('port')),
   ("TM_MQTT_SVR", mqttConfig.get("server")),
   ("TM_MQTT_USER", mqttConfig.get("user")),
-  ("TM_MQTT_PASSWD", mqttConfig.get("password")),
-  ("TM_CT", transformerLine)
+  ("TM_MQTT_PASSWD", mqttConfig.get("password"))
 ])
 
 if sslEnabled:

@@ -152,11 +152,12 @@ void loop()
       xQueueReceive(eicDataQueue, &mqttSensorData, portMAX_DELAY);
       char timeBuffer[32];
       strftime(timeBuffer, sizeof(timeBuffer), "%FT%TZ", mqttSensorData.timeInfo);
-      // Sensor is not working
-      if (mqttSensorData.sysStatus == 6555 || mqttSensorData.sysStatus == 0)
+      if (mqttSensorData.sysStatus == 0xFFFF)
       {
+        // Sensor is not working - set LED red
         setLEDColor(255,0,0);
       } else {
+        // Sensor is working - set LED green
         setLEDColor(0,255,0);
       }
       
@@ -167,13 +168,12 @@ void loop()
       mqttJsonData["sysStatus"] = mqttSensorData.sysStatus;
 
       mqttJsonData["current"] = mqttSensorData.lineCurrent;
-      mqttJsonData["neutralCurrent"] = mqttSensorData.neutralCurrent;
       mqttJsonData["voltage"] = mqttSensorData.lineCurrent;
       powerObj["active"] = mqttSensorData.power.active;
       powerObj["apparent"] = mqttSensorData.power.apparent;
       powerObj["factor"] = mqttSensorData.power.factor;
       powerObj["reactive"] = mqttSensorData.power.reactive;
-
+      
       tempObj["oil"] = mqttSensorData.temps.oil;
       tempObj["cabinet"] = mqttSensorData.temps.cabinet;
       

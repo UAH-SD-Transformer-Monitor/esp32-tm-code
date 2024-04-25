@@ -9,7 +9,7 @@ HardwareSerial ATMSerial(1);        //1 = just hardware serial number. ESP32 sup
 ATM90E26_UART eic(&ATMSerial);
 
 void setup() {
-  Serial.begin(115200);
+  Serial.begin(9600);
   while (!Serial){}
   
   Serial.println("\nATM90E26 UART Test Started");
@@ -36,7 +36,7 @@ void loop() {
 	while (1);
   }
   
-  Serial.println(eic.GetSysStatus(),HEX);
+  Serial.println(eic.GetSysStatus());
   delay(10);
   Serial.print("Meter Status:");
   Serial.println(eic.GetMeterStatus(),HEX);

@@ -8,6 +8,7 @@
 #include <freertos/FreeRTOS.h>
 #include <freertos/queue.h>
 #include <idf_additions.h>
+#include <energyic_UART.h>
 
 // Turn build flags (Macros) into strings
 #define ST(A) #A
@@ -40,16 +41,22 @@
   char const  *mqttPass = STR(TM_MQTT_PASSWD);
 #endif
 
-
-
 // include the cert if using SSL
 #ifdef TM_MQTT_SSL
   #include <transformerMonitorServerCert.h>
 #endif
 
+//********* GPIO PINS ************* //
+
 // pins for UART
 #define PIN_SerialATM_RX       16   //RX pin, CHANGE IT according to your board
 #define PIN_SerialATM_TX       17   //TX pin, CHANGE IT according to your board
+
+// GPIO pins where the DS18B20 sensors are connected
+const int oilTempBus = 4;
+const int cabinetTempBus = 9;
+
+//******************************* //
 
 void messageReceived(String &topic, String &payload);
 
@@ -57,21 +64,13 @@ void messageReceived(String &topic, String &payload);
 WiFiClientSecure wifiClient;
 PubSubClient mqttClient;
 
-
-#include <energyic_UART.h>
-
 HardwareSerial ATMSerial(1);        //1 = just hardware serial number. ESP32 supports 3 hardware serials. UART 0 usually for flashing.
 ATM90E26_UART eic(&ATMSerial);
 
 
 // we are using the transformer's name to provide a unique ID
-char* client_id = "name-of-transformer";
+char* client_id = "al-xformer-592";
 
-
-
-// GPIO pins where the DS18B20 sensors are connected
-const int oilTempBus = 4;
-const int cabinetTempBus = 9;
 
 struct tempSensors {
   DallasTemperature oil, cabinet;
@@ -112,8 +111,7 @@ struct energyData {
 
 struct xformerMonitorData {
   unsigned short sysStatus, meterStatus;
-  double neutralCurrent, lineVoltage, phase;
-  float lineCurrent;
+  double lineCurrent, lineVoltage;
   tm *timeInfo;
   tempData temps;
   powerData power;
