@@ -12,9 +12,9 @@ unsigned long lastMillis = 0;
 void setup()
 {
   // set LED pins
-  pinMode(PIN_RED,   OUTPUT);
+  pinMode(PIN_RED, OUTPUT);
   pinMode(PIN_GREEN, OUTPUT);
-  pinMode(PIN_BLUE,  OUTPUT);
+  pinMode(PIN_BLUE, OUTPUT);
 
   // set LED to Red - FF0000
   setLEDColor(255, 0, 0);
@@ -22,7 +22,7 @@ void setup()
   Serial.begin(9600);
 
   // create data queue
-  eicDataQueue = xQueueCreate( 50, sizeof( xformerMonitorData ) );
+  eicDataQueue = xQueueCreate(50, sizeof(xformerMonitorData));
   if (eicDataQueue == 0)
   {
     printf("Failed to create queue= %p\n", eicDataQueue);
@@ -40,48 +40,37 @@ void setup()
 #endif
 
   // Start the DS18B20 sensors
-  monitorTempSensors.cabinet.begin();
-  monitorTempSensors.oil.begin();
+  // monitorTempSensors.cabinet.begin();
+  // monitorTempSensors.oil.begin();
 
   // Get each DS18B20 sensors' address
-  monitorTempSensors.oil.getAddress(oilTempSensorAddr, 0);
-  monitorTempSensors.cabinet.getAddress(cabinetTempSensorAddr, 0);
-
-
+  // monitorTempSensors.oil.getAddress(oilTempSensorAddr, 0);
+  // monitorTempSensors.cabinet.getAddress(cabinetTempSensorAddr, 0);
 
   setupMQTTClient();
 
   setupEnergyMonitor();
-  
 
   // set LED color
   setLEDColor(0, 0, 255);
-  // BaseType_t test = xTaskCreatePinnedToCore(
-  //     sendSensorDataOverMQTT, /* Function to implement the task */
-  //     "Send sensor data over MQTT",     /* Name of the task */
-  //     50000,       /* Stack size in words */
-  //     NULL,        /* Task input parameter */
-  //     0,           /* Priority of the task */
-  //     &taskSendData,      /* Task handle. */
-  //     0);          /* Core where the task should run */
-  // Serial.println(test);
+
+  connect();
+
   delay(500);
- BaseType_t eicTask = xTaskCreatePinnedToCore(
-      readEICData, /* Function to implement the task */
-      "Read EIC data",     /* Name of the task */
-      20000,       /* Stack size in words */
-      NULL,        /* Task input parameter */
-      0,           /* Priority of the task */
-      &taskReadEIC,      /* Task handle. */
-      0);          /* Core where the task should run */
-  Serial.println(eicTask);
+  BaseType_t eicTask = xTaskCreatePinnedToCore(
+      readEICData,     /* Function to implement the task */
+      "Read EIC data", /* Name of the task */
+      40000,           /* Stack size in words */
+      NULL,            /* Task input parameter */
+      0,               /* Priority of the task */
+      &taskReadEIC,    /* Task handle. */
+      0);              /* Core where the task should run */
 }
 
 // connect connects to the WiFi and restarts it
 // TODO: set LED red when not connected, green when connected
 void connect()
 {
-
   // connect to the WiFi network
   Serial.print("Attempting to connect to SSID: ");
   Serial.println(ssid);
@@ -97,7 +86,6 @@ void connect()
   }
   Serial.print("Connected to ");
   Serial.println(ssid);
-
 
   Serial.print("Username: ");
   Serial.println(mqttUser);
@@ -134,8 +122,6 @@ void messageReceived(String &topic, String &payload)
 
 void loop()
 {
-  Serial.print("Task1 running on core ");
-  Serial.println(xPortGetCoreID());
   delay(3000);
   StaticJsonDocument<512> mqttJsonData;
   JsonObject tempObj = mqttJsonData.createNestedObject("temps");
@@ -146,7 +132,6 @@ void loop()
   int emptySpaces = uxQueueSpacesAvailable(eicDataQueue);
   for (;;)
   {
-    
     if (messagesWaiting > 2)
     {
       xQueueReceive(eicDataQueue, &mqttSensorData, portMAX_DELAY);
@@ -155,13 +140,14 @@ void loop()
       if (mqttSensorData.sysStatus == 0xFFFF)
       {
         // Sensor is not working - set LED red
-        setLEDColor(255,0,0);
-      } else {
-        // Sensor is working - set LED green
-        setLEDColor(0,255,0);
+        setLEDColor(255, 0, 0);
       }
-      
-    
+      else
+      {
+        // Sensor is working - set LED green
+        setLEDColor(0, 255, 0);
+      }
+
       mqttJsonData["deviceId"] = client_id;
       mqttJsonData["time"] = timeBuffer;
       mqttJsonData["meterStatus"] = mqttSensorData.meterStatus;
@@ -173,10 +159,10 @@ void loop()
       powerObj["apparent"] = mqttSensorData.power.apparent;
       powerObj["factor"] = mqttSensorData.power.factor;
       powerObj["reactive"] = mqttSensorData.power.reactive;
-      
+
       tempObj["oil"] = mqttSensorData.temps.oil;
       tempObj["cabinet"] = mqttSensorData.temps.cabinet;
-      
+
       energyObj["export"] = mqttSensorData.energy.exp;
       energyObj["import"] = mqttSensorData.energy.import;
 
@@ -214,73 +200,109 @@ void setupEnergyMonitor()
 {
   // Buad rate for UART serial
   // Serial config
-  // Serial RX pin 
+  // Serial RX pin
   // Serial TX pin
   ATMSerial.begin(9600, SERIAL_8N1, PIN_SerialATM_RX, PIN_SerialATM_TX);
-
+  eic.InitEnergyIC();
+  delay(1000);
 }
 
 // readEICData: reads the EIC and inserts data into queue
 void readEICData(void *pvParameters)
 {
-  Serial.print("Task0 running on core ");
-  Serial.println(xPortGetCoreID());
-  vTaskDelay(2000);
-
   // Attach interrupt for reading data every one second
-  readEICTimer = timerBegin(0, 80, true);
-  timerAttachInterrupt(readEICTimer, &ReadData, true);
-  timerAlarmWrite(readEICTimer, 1000000, true);
-  timerAlarmEnable(readEICTimer); // Just Enable
+  // readEICTimer = timerBegin(0, 80, true);
+  // timerAttachInterrupt(readEICTimer, &ReadData, true);
+  // timerAlarmWrite(readEICTimer, 1000000, true);
+  // timerAlarmEnable(readEICTimer); // Just Enable
 
   for (;;)
   {
+    // vTaskDelay(3000);
+    static int timesEnteredISR = 1;
+    timesEnteredISR++;
+
+    // Read temperature data every 60 seconds
+    // Obtain DS18B20 sensor data
+    if (timesEnteredISR == 60)
+    {
+      timesEnteredISR = 0;
+      monitorTempSensors.cabinet.requestTemperatures();
+      monitorTempSensors.oil.requestTemperatures();
+      // get cabinet temp sensor data
+      sensorData.temps.cabinet = monitorTempSensors.cabinet.getTempC(cabinetTempSensorAddr);
+      // get oil temp sensor data
+      sensorData.temps.oil = monitorTempSensors.oil.getTempC(oilTempSensorAddr);
+    }
+
+    // Get the current time and store it in a variable
+    time(&now);
+    // set {"time":"2021-05-04T13:13:04Z"}
+    delay(10);
+    sensorData.timeInfo = gmtime(&now);
+    // in hex
+    delay(10);
+    sensorData.meterStatus = eic.GetMeterStatus();
+
+    delay(10);
+    sensorData.sysStatus = eic.GetSysStatus();
+    delay(10);
+
+    sensorData.lineVoltage = eic.GetLineVoltage();
+
+    delay(10);
+    sensorData.lineCurrent = eic.GetLineCurrent();
+    // convert lineVoltage and lineCurrent to floats
+    delay(10);
+    sensorData.power.factor = eic.GetPowerFactor();
+
+    xQueueSend(eicDataQueue, &sensorData, portMAX_DELAY);
+    // Serial.println("hello from ISR");
   }
 }
 
+void IRAM_ATTR ReadData()
+{
+  // // Count the number of times the ISR has been entered
+  // static int timesEnteredISR = 1;
+  // timesEnteredISR++;
 
-void IRAM_ATTR ReadData(){
-  // Count the number of times the ISR has been entered
-  static int timesEnteredISR = 1;
-  timesEnteredISR++;
+  // // Read temperature data every 60 seconds
+  // // Obtain DS18B20 sensor data
+  // if (timesEnteredISR == 60)
+  // {
+  //   // timesEnteredISR = 0;
+  //   // monitorTempSensors.cabinet.requestTemperatures();
+  //   // monitorTempSensors.oil.requestTemperatures();
+  //   // // get cabinet temp sensor data
+  //   // sensorData.temps.cabinet = monitorTempSensors.cabinet.getTempC(cabinetTempSensorAddr);
+  //   // // get oil temp sensor data
+  //   // sensorData.temps.oil =  monitorTempSensors.oil.getTempC(oilTempSensorAddr);
+  // }
 
-  // Read temperature data every 60 seconds
-  // Obtain DS18B20 sensor data
-  if (timesEnteredISR == 60)
-  {
-    timesEnteredISR = 0;
-    monitorTempSensors.cabinet.requestTemperatures();
-    monitorTempSensors.oil.requestTemperatures();
-    // get cabinet temp sensor data
-    sensorData.temps.cabinet = monitorTempSensors.cabinet.getTempC(cabinetTempSensorAddr);
-    // get oil temp sensor data
-    sensorData.temps.oil =  monitorTempSensors.oil.getTempC(oilTempSensorAddr);
-  }
-  
+  // // Get the current time and store it in a variable
+  // time(&now);
+  // // set {"time":"2021-05-04T13:13:04Z"}
+  // sensorData.timeInfo = gmtime(&now);
+  // // in hex
+  // sensorData.meterStatus = eic.GetMeterStatus();
 
-  // Get the current time and store it in a variable
-  time(&now);
-  // set {"time":"2021-05-04T13:13:04Z"}
-  sensorData.timeInfo = gmtime(&now);
-  // in hex
-  sensorData.meterStatus = eic.GetMeterStatus();
-  
-  sensorData.sysStatus = eic.GetSysStatus();
+  // sensorData.sysStatus = eic.GetSysStatus();
 
-  sensorData.lineVoltage = eic.GetLineVoltage();
+  // sensorData.lineVoltage = eic.GetLineVoltage();
 
-  sensorData.lineCurrent = eic.GetLineCurrent();
-  // convert lineVoltage and lineCurrent to floats
-  
+  // sensorData.lineCurrent = eic.GetLineCurrent();
+  // // convert lineVoltage and lineCurrent to floats
 
-  sensorData.power.factor = eic.GetPowerFactor();
+  // sensorData.power.factor = eic.GetPowerFactor();
 
-  xQueueSend(eicDataQueue, &sensorData, portMAX_DELAY);
-  Serial.println("hello from ISR");
+  // xQueueSend(eicDataQueue, &sensorData, portMAX_DELAY);
+  // // Serial.println("hello from ISR");
 }
 
-void setLEDColor(int R, int G, int B) {
-  analogWrite(PIN_RED,   R);
-  analogWrite(PIN_GREEN, G);
-  analogWrite(PIN_BLUE,  B);
+void setLEDColor(int R, int G, int B)
+{
+  // analogWrite(PIN_RED,   R);
+  // analogWrite(PIN_GREEN, G);
+  // analogWrite(PIN_BLUE,  B);
 }

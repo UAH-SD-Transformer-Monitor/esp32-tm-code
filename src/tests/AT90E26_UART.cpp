@@ -62,5 +62,8 @@ void loop() {
   delay(10);
   Serial.print("p.f.:");
   Serial.println(eic.GetPowerFactor());
+  delay(10);
+  Serial.print("freq:");
+  Serial.println(eic.GetFrequency());
   delay(1000);
 }

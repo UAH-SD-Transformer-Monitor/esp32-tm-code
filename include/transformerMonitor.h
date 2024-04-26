@@ -49,8 +49,8 @@
 //********* GPIO PINS ************* //
 
 // pins for UART
-#define PIN_SerialATM_RX       19   //RX pin, CHANGE IT according to your board
-#define PIN_SerialATM_TX       13   //TX pin, CHANGE IT according to your board
+#define PIN_SerialATM_RX       19   //RX pin for AdaFruit Huzzah32
+#define PIN_SerialATM_TX       13   //TX pin for AdaFruit Huzzah32
 
 // GPIO pins where the DS18B20 sensors are connected
 const int oilTempBus = 4;
@@ -59,7 +59,6 @@ const int cabinetTempBus = 9;
 //******************************* //
 
 void messageReceived(String &topic, String &payload);
-
 
 WiFiClientSecure wifiClient;
 PubSubClient mqttClient;
@@ -70,7 +69,6 @@ ATM90E26_UART eic(&ATMSerial);
 
 // we are using the transformer's name to provide a unique ID
 char* client_id = "al-xformer-592";
-
 
 struct tempSensors {
   DallasTemperature oil, cabinet;
@@ -131,7 +129,6 @@ QueueHandle_t eicDataQueue;
 
 // Functions for tasks
 void readEICData( void * pvParameters );
-void sendSensorDataOverMQTT( void * pvParameters );
 // End functions for tasks
 
 // Timer variable and function
