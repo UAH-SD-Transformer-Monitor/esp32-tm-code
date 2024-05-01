@@ -172,7 +172,7 @@ void ATM90E26_UART::InitEnergyIC() {
   CommEnergyIC(
       0, AdjStart,
       0x5678); // Measurement calibration startup command, registers 31-3A
-  CommEnergyIC(0, Ugain, 0x34E2);    // Voltage rms gain
+  CommEnergyIC(0, Ugain, 0x039D);    // Voltage rms gain
   CommEnergyIC(0, IgainL, 0x6E49);   // L line current gain
   CommEnergyIC(0, Uoffset, 0x0000);  // Voltage offset
   CommEnergyIC(0, IoffsetL, 0x0000); // L line current offset

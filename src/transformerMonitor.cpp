@@ -1,7 +1,6 @@
 /*
   Transformer monitor project
 */
-
 #include <transformerMonitor.h>
 
 unsigned long lastMillis = 0;
@@ -57,14 +56,6 @@ void setup()
   connect();
 
   delay(500);
-  BaseType_t eicTask = xTaskCreatePinnedToCore(
-      readEICData,     /* Function to implement the task */
-      "Read EIC data", /* Name of the task */
-      40000,           /* Stack size in words */
-      NULL,            /* Task input parameter */
-      0,               /* Priority of the task */
-      &taskReadEIC,    /* Task handle. */
-      0);              /* Core where the task should run */
 }
 
 // connect connects to the WiFi and restarts it
@@ -122,21 +113,29 @@ void messageReceived(String &topic, String &payload)
 
 void loop()
 {
+  BaseType_t eicTask = xTaskCreatePinnedToCore(
+      readEICData,     /* Function to implement the task */
+      "Read EIC data", /* Name of the task */
+      60000,           /* Stack size in words */
+      NULL,            /* Task input parameter */
+      0,               /* Priority of the task */
+      &taskReadEIC,    /* Task handle. */
+      0);              /* Core where the task should run */
+
   delay(3000);
   StaticJsonDocument<512> mqttJsonData;
-  JsonObject tempObj = mqttJsonData.createNestedObject("temps");
-  JsonObject powerObj = mqttJsonData.createNestedObject("power");
-  JsonObject energyObj = mqttJsonData.createNestedObject("energy");
-  xformerMonitorData mqttSensorData;
   int messagesWaiting = uxQueueMessagesWaiting(eicDataQueue);
   int emptySpaces = uxQueueSpacesAvailable(eicDataQueue);
   for (;;)
   {
     if (messagesWaiting > 2)
     {
+      xformerMonitorData mqttSensorData;
       xQueueReceive(eicDataQueue, &mqttSensorData, portMAX_DELAY);
       char timeBuffer[32];
+      delay(100);
       strftime(timeBuffer, sizeof(timeBuffer), "%FT%TZ", mqttSensorData.timeInfo);
+      delay(100);
       if (mqttSensorData.sysStatus == 0xFFFF)
       {
         // Sensor is not working - set LED red
@@ -148,13 +147,20 @@ void loop()
         setLEDColor(0, 255, 0);
       }
 
+      JsonObject tempObj = mqttJsonData.createNestedObject("temps");
+      delay(10);
+      JsonObject powerObj = mqttJsonData.createNestedObject("power");
+      delay(10);
+      JsonObject energyObj = mqttJsonData.createNestedObject("energy");
+      delay(10);
       mqttJsonData["deviceId"] = client_id;
       mqttJsonData["time"] = timeBuffer;
       mqttJsonData["meterStatus"] = mqttSensorData.meterStatus;
       mqttJsonData["sysStatus"] = mqttSensorData.sysStatus;
+      
 
       mqttJsonData["current"] = mqttSensorData.lineCurrent;
-      mqttJsonData["voltage"] = mqttSensorData.lineCurrent;
+      mqttJsonData["voltage"] = mqttSensorData.lineVoltage;
       powerObj["active"] = mqttSensorData.power.active;
       powerObj["apparent"] = mqttSensorData.power.apparent;
       powerObj["factor"] = mqttSensorData.power.factor;
@@ -168,8 +174,10 @@ void loop()
 
       char mqttDataBuffer[512];
       size_t n = serializeJson(mqttJsonData, mqttDataBuffer);
+      Serial.print(mqttDataBuffer);
       delay(50);
       mqttClient.publish("xfmormermon/", mqttDataBuffer, n);
+      mqttJsonData.clear();
     }
     delay(10); // <- fixes some issues with WiFi stability
     mqttClient.loop();
@@ -215,13 +223,20 @@ void readEICData(void *pvParameters)
   // timerAttachInterrupt(readEICTimer, &ReadData, true);
   // timerAlarmWrite(readEICTimer, 1000000, true);
   // timerAlarmEnable(readEICTimer); // Just Enable
+  // Serial.println("App");
 
   for (;;)
   {
+    xformerMonitorData sensorData;
+    delay(1000);
     // vTaskDelay(3000);
     static int timesEnteredISR = 1;
     timesEnteredISR++;
 
+  
+    // global time variable
+    time_t now;
+    
     // Read temperature data every 60 seconds
     // Obtain DS18B20 sensor data
     if (timesEnteredISR == 60)
@@ -240,8 +255,14 @@ void readEICData(void *pvParameters)
     // set {"time":"2021-05-04T13:13:04Z"}
     delay(10);
     sensorData.timeInfo = gmtime(&now);
-    // in hex
+    if (!sensorData.timeInfo)
+    {
+      Serial.println("Time is null");
+    }
+      Serial.println(sensorData.timeInfo);
+    
     delay(10);
+    // in hex
     sensorData.meterStatus = eic.GetMeterStatus();
 
     delay(10);
@@ -252,6 +273,7 @@ void readEICData(void *pvParameters)
 
     delay(10);
     sensorData.lineCurrent = eic.GetLineCurrent();
+
     // convert lineVoltage and lineCurrent to floats
     delay(10);
     sensorData.power.factor = eic.GetPowerFactor();

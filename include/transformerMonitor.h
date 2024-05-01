@@ -67,7 +67,7 @@ HardwareSerial ATMSerial(1);        //1 = just hardware serial number. ESP32 sup
 ATM90E26_UART eic(&ATMSerial);
 
 
-// we are using the transformer's name to provide a unique ID
+// * we are using the transformer's name to provide a unique ID
 char* client_id = "al-xformer-592";
 
 struct tempSensors {
@@ -88,8 +88,6 @@ DallasTemperature cabinetTempSensor(&cabinetTempBusOneWire);
 // temp sensor objects
 tempSensors monitorTempSensors{oilTempSensor, cabinetTempSensor};
 
-// global time variable
-time_t now;
 
 // Data structs for queue
 struct tempData {
@@ -118,7 +116,6 @@ struct xformerMonitorData {
 // End data structs for queue
 
 // Global to be used in ISR
-xformerMonitorData sensorData;
 
 // Variables for tasks and queue
 TaskHandle_t taskReadEIC;
