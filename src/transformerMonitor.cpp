@@ -10,7 +10,7 @@ unsigned long lastMillis = 0;
 // const char* test_client_cert = "";  //to verify the client
 void setup()
 {
-  // Serial.begin(9600);
+  Serial.begin(9600);
   delay(1000);
   setupEnergyMonitor();
   // set LED pins
@@ -129,7 +129,7 @@ void loop()
   // ! Anything after in the for loop will be run indefinitely
   for (;;)
   {
-    if (messagesWaiting > 2)
+    if (messagesWaiting > 1)
     {
       xformerMonitorData mqttSensorData;
       xQueueReceive(eicDataQueue, &mqttSensorData, portMAX_DELAY);
@@ -137,7 +137,8 @@ void loop()
       delay(100);
       strftime(timeBuffer, sizeof(timeBuffer), "%FT%TZ", mqttSensorData.timeInfo);
       delay(100);
-      if (mqttSensorData.sysStatus == 0xFFFF)
+      // if sysStatus is not reporting, or if there is no current
+      if (mqttSensorData.sysStatus == 0xFFFF || mqttSensorData.lineCurrent <= 0.1)
       {
         // Sensor is not working - set LED red
         setLEDColor(255, 0, 0);
@@ -227,18 +228,25 @@ void setupEnergyMonitor()
 // readEICData: reads the EIC and inserts data into queue
 void readEICData(void *pvParameters)
 {
+  xformerMonitorData sensorData;
+
+  // * get temps on startup
+  monitorTempSensors.cabinet.requestTemperatures();
+  monitorTempSensors.oil.requestTemperatures();
+  // get cabinet temp sensor data
+  sensorData.temps.cabinet = monitorTempSensors.cabinet.getTempC(cabinetTempSensorAddr);
+  // get oil temp sensor data
+  sensorData.temps.oil = monitorTempSensors.oil.getTempC(oilTempSensorAddr);
 
   for (;;)
   {
-    xformerMonitorData sensorData;
-    delay(1000);
-    // vTaskDelay(3000);
-    static int secondsPassed = 1;
-    secondsPassed++;
-
-  
+    static int secondsPassed = 0;
     // global time variable
     time_t now;
+    // Get the current time and store it in a variable
+    time(&now);
+    // set {"time":"2021-05-04T13:13:04Z"}
+    sensorData.timeInfo = gmtime(&now);
     
     // Read temperature data every 60 seconds
     // Obtain DS18B20 sensor data
@@ -253,39 +261,37 @@ void readEICData(void *pvParameters)
       sensorData.temps.oil = monitorTempSensors.oil.getTempC(oilTempSensorAddr);
     }
 
-    // Get the current time and store it in a variable
-    time(&now);
-    // set {"time":"2021-05-04T13:13:04Z"}
-    delay(10);
-    sensorData.timeInfo = gmtime(&now);
     
-    delay(10);
+    vTaskDelay(10);
     // in hex
     sensorData.meterStatus = eic.GetMeterStatus();
 
-    delay(10);
+    vTaskDelay(10);
     sensorData.sysStatus = eic.GetSysStatus();
-    delay(10);
+    
+    vTaskDelay(10);
 
     sensorData.lineVoltage = eic.GetLineVoltage();
 
-    delay(10);
+    vTaskDelay(10);
     sensorData.lineCurrent = eic.GetLineCurrent();
 
-    delay(10);
+    vTaskDelay(10);
     sensorData.power.factor = eic.GetPowerFactor();
-    delay(10);
+    vTaskDelay(10);
     sensorData.power.active = eic.GetActivePower();
-    delay(10);
+    vTaskDelay(10);
 
+    // send data to queue
     xQueueSend(eicDataQueue, &sensorData, portMAX_DELAY);
-    // Serial.println("hello from ISR");
+    vTaskDelay(1000);
+    secondsPassed++;
   }
 }
 
 void setLEDColor(int R, int G, int B)
 {
-  // analogWrite(PIN_RED,   R);
-  // analogWrite(PIN_GREEN, G);
-  // analogWrite(PIN_BLUE,  B);
+  analogWrite(PIN_RED,   R);
+  analogWrite(PIN_GREEN, G);
+  analogWrite(PIN_BLUE,  B);
 }

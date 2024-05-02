@@ -111,11 +111,8 @@ struct xformerMonitorData {
 };
 // End data structs for queue
 
-// Global to be used in ISR
-
 // Variables for tasks and queue
 TaskHandle_t taskReadEIC;
-TaskHandle_t taskSendData;
 
 QueueHandle_t eicDataQueue;
 // End variables for tasks
