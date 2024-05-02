@@ -26,14 +26,6 @@ mqttServer = mqttConfig.get("server")
 mqttPort = mqttConfig.get("port")
 sensorConfig = monitorConfigFile.get("sensor")
 
-sslEnabled = monitorConfigFile["ssl"]['enabled']
-if not sslEnabled:
-  mqttConfig["port"] = 1883
-else:
-  mqttConfig["port"] = 8883
-
-
-
 if wifiConfig.get("ssid") == None:
     print(f"wifi object variable SSID not defined. Define it in the config.yml file at the root of the project.")
     os._exit(1)
@@ -55,12 +47,10 @@ env.Append(CPPDEFINES=[
   ("TM_MQTT_PASSWD", mqttConfig.get("password"))
 ])
 
-if sslEnabled:
-  print("SSL enabled")
-  env.Append(CPPDEFINES=[
-    ("TM_MQTT_SSL", sslEnabled)
-  ])
-  certStr = "const char* root_ca= \\\n"
+# C-style string variable
+certStr = "const char* root_ca= \\\n"
+
+if not os.path.exists("cert.crt"):
   # get the SSL cert and write it to a file
   cert = ssl.get_server_certificate((mqttServer, mqttPort))
   ctx = OpenSSL.SSL.Context(OpenSSL.SSL.SSLv23_METHOD)
@@ -104,5 +94,17 @@ if sslEnabled:
   certHeaderFile.write(";")
   certHeaderFile.close()
 else:
-  if os.path.exists("include/transformerMonitorServerCert.h"):
-    os.remove("include/transformerMonitorServerCert.h")
+  #parse cert file
+  with open("cert.crt", "r") as file:
+    for item in file:
+      for i in item.splitlines():
+        if i.startswith("-----END CERTIFICATE-----"):
+          certStr += " \"" + str(i) + "\\n\""
+        else:
+          certStr += " \"" + str(i) + "\\n\"\\\n"
+  certHeaderFile = open("include/transformerMonitorServerCert.h", "w")
+  certHeaderFile.write(certStr)
+  certHeaderFile.close()
+  certHeaderFile = open("include/transformerMonitorServerCert.h", "a")
+  certHeaderFile.write(";")
+  certHeaderFile.close()

@@ -9,6 +9,7 @@
 #include <freertos/queue.h>
 #include <idf_additions.h>
 #include <energyic_UART.h>
+#include <transformerMonitorServerCert.h>
 
 // Turn build flags (Macros) into strings
 #define ST(A) #A
@@ -41,10 +42,7 @@
   char const  *mqttPass = STR(TM_MQTT_PASSWD);
 #endif
 
-// include the cert if using SSL
-#ifdef TM_MQTT_SSL
-  #include <transformerMonitorServerCert.h>
-#endif
+
 
 //********* GPIO PINS ************* //
 

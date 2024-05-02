@@ -1,6 +1,3 @@
-ssl:
-  # Must be true if using SSL!
-  enabled: true
 wifi:
   # Your WiFi SSID
   ssid: "Your-WiFi-SSID"
@@ -15,10 +12,9 @@ mqtt:
   user: test
   # Your MQTT Password
   password: secure-mqtt-pass
-  # A unique ID
+  # A unique ID, usually the name of the transformer
   id: unique-id
 sensor:
-  type: ATM90E36
   config:
     # voltage rms gain in hex. See docs/Gains.md for more information
     ugain: 0x

@@ -36,9 +36,8 @@ void setup()
 
   delay(1000);
 
-#ifdef TM_MQTT_SSL
+  // ! Will not run without valid SSL Cert
   wifiClient.setCACert(root_ca);
-#endif
 
   // Start the DS18B20 sensors
   monitorTempSensors.cabinet.begin();
