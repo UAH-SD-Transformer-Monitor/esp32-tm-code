@@ -138,7 +138,7 @@ void loop()
       strftime(timeBuffer, sizeof(timeBuffer), "%FT%TZ", mqttSensorData.timeInfo);
       delay(100);
       // if sysStatus is not reporting, or if there is no current
-      if (mqttSensorData.sysStatus == 0xFFFF || mqttSensorData.lineCurrent <= 0.1)
+      if (mqttSensorData.sysStatus == 0xFFFF || mqttSensorData.lineCurrent <= 0.05)
       {
         // Sensor is not working - set LED red
         setLEDColor(255, 0, 0);
