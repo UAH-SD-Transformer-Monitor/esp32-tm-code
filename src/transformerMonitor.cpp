@@ -182,7 +182,7 @@ void loop()
       char mqttDataBuffer[512];
       size_t n = serializeJson(mqttJsonData, mqttDataBuffer);
       delay(50);
-      mqttClient.publish("xfmormermon/", mqttDataBuffer, n);
+      mqttClient.publish("xformermon/", mqttDataBuffer, n);
     }
     delay(10); // <- fixes some issues with WiFi stability
     mqttClient.loop();
