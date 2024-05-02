@@ -74,7 +74,7 @@ void connect()
     setLEDColor(255, 0, 0);
     Serial.print(".");
     // wait 1 second for re-trying
-    delay(100);
+    delay(1000);
   }
   Serial.print("Connected to ");
   Serial.println(ssid);
@@ -89,15 +89,16 @@ void connect()
   if (mqttClient.connect(client_id, mqttUser, mqttPass))
   {
     setLEDColor(0, 255, 0);
+    Serial.println("\nconnected!");
   }
   else
   {
+    Serial.println("\nnot connected to MQTT!");
     // set LED color to red
     setLEDColor(255, 0, 0);
     delay(2000);
   }
 
-  Serial.println("\nconnected!");
 }
 
 void messageReceived(String &topic, String &payload)
