@@ -53,8 +53,12 @@
 #define PIN_SerialATM_TX       13   //TX pin for AdaFruit Huzzah32
 
 // GPIO pins where the DS18B20 sensors are connected
-const int oilTempBus = 4;
-const int cabinetTempBus = 9;
+const int oilTempBus = 5; // one in the epoxy resin
+const int cabinetTempBus = 4;
+
+#define PIN_RED 16   // GPIO16
+#define PIN_BLUE 17  // GPIO17
+#define PIN_GREEN 21 // GPIO21
 
 //******************************* //
 
@@ -95,14 +99,7 @@ struct tempData {
 };
 
 struct powerData {
-  double active, apparent, reactive, factor;
-};
-
-struct harmonicData {
-  double voltage, current;
-};
-struct energyData {
-  double import, exp;
+  double active, factor;
 };
 
 struct xformerMonitorData {
@@ -111,7 +108,6 @@ struct xformerMonitorData {
   tm *timeInfo;
   tempData temps;
   powerData power;
-  energyData energy;
 };
 // End data structs for queue
 
@@ -132,11 +128,6 @@ void readEICData( void * pvParameters );
 hw_timer_t *readEICTimer = NULL;
 void IRAM_ATTR ReadData();
 // End timer variable and function
-
-// LED pins
-#define PIN_RED    23 // GPIO23
-#define PIN_GREEN  22 // GPIO22
-#define PIN_BLUE   21 // GPIO21
 
 // LED color Function
 // Red   - 0 to 255

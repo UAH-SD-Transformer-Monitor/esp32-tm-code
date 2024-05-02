@@ -151,8 +151,8 @@ void ATM90E26_UART::InitEnergyIC() {
   // Set metering calibration values
   CommEnergyIC(0, CalStart, 0x5678); // Metering calibration startup command.
                                      // Register 21 to 2B need to be set
-  CommEnergyIC(0, PLconstH, 0x005A); // PL Constant MSB
-  CommEnergyIC(0, PLconstL, 0x9F11); // PL Constant LSB
+  CommEnergyIC(0, PLconstH, 0x0014); // PL Constant MSB
+  CommEnergyIC(0, PLconstL, 0x3FB7); // PL Constant LSB
   CommEnergyIC(0, Lgain, 0x1D39);    // Line calibration gain
   CommEnergyIC(0, Lphi, 0x0000);     // Line calibration angle
   CommEnergyIC(0, PStartTh, 0x08BD); // Active Startup Power Threshold
@@ -172,7 +172,7 @@ void ATM90E26_UART::InitEnergyIC() {
   CommEnergyIC(
       0, AdjStart,
       0x5678); // Measurement calibration startup command, registers 31-3A
-  CommEnergyIC(0, Ugain, 0x039D);    // Voltage rms gain
+  CommEnergyIC(0, Ugain, 0x352F);    // Voltage rms gain
   CommEnergyIC(0, IgainL, 0x6E49);   // L line current gain
   CommEnergyIC(0, Uoffset, 0x0000);  // Voltage offset
   CommEnergyIC(0, IoffsetL, 0x0000); // L line current offset

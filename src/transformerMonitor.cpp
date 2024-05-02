@@ -10,6 +10,9 @@ unsigned long lastMillis = 0;
 // const char* test_client_cert = "";  //to verify the client
 void setup()
 {
+  // Serial.begin(9600);
+  delay(1000);
+  setupEnergyMonitor();
   // set LED pins
   pinMode(PIN_RED, OUTPUT);
   pinMode(PIN_GREEN, OUTPUT);
@@ -18,10 +21,9 @@ void setup()
   // set LED to Red - FF0000
   setLEDColor(255, 0, 0);
   delay(1000);
-  Serial.begin(9600);
 
   // create data queue
-  eicDataQueue = xQueueCreate(50, sizeof(xformerMonitorData));
+  eicDataQueue = xQueueCreate(60, sizeof(xformerMonitorData));
   if (eicDataQueue == 0)
   {
     printf("Failed to create queue= %p\n", eicDataQueue);
@@ -39,16 +41,15 @@ void setup()
 #endif
 
   // Start the DS18B20 sensors
-  // monitorTempSensors.cabinet.begin();
-  // monitorTempSensors.oil.begin();
+  monitorTempSensors.cabinet.begin();
+  monitorTempSensors.oil.begin();
 
   // Get each DS18B20 sensors' address
-  // monitorTempSensors.oil.getAddress(oilTempSensorAddr, 0);
-  // monitorTempSensors.cabinet.getAddress(cabinetTempSensorAddr, 0);
+  monitorTempSensors.oil.getAddress(oilTempSensorAddr, 0);
+  monitorTempSensors.cabinet.getAddress(cabinetTempSensorAddr, 0);
 
   setupMQTTClient();
 
-  setupEnergyMonitor();
 
   // set LED color
   setLEDColor(0, 0, 255);
@@ -91,10 +92,8 @@ void connect()
   }
   else
   {
-    // set LED color
+    // set LED color to red
     setLEDColor(255, 0, 0);
-    Serial.print("failed with state ");
-    Serial.print(mqttClient.state());
     delay(2000);
   }
 
@@ -126,6 +125,8 @@ void loop()
   StaticJsonDocument<512> mqttJsonData;
   int messagesWaiting = uxQueueMessagesWaiting(eicDataQueue);
   int emptySpaces = uxQueueSpacesAvailable(eicDataQueue);
+
+  // ! Anything after in the for loop will be run indefinitely
   for (;;)
   {
     if (messagesWaiting > 2)
@@ -147,40 +148,46 @@ void loop()
         setLEDColor(0, 255, 0);
       }
 
+      // ******** Parse struct into JSON ************** //
+
       JsonObject tempObj = mqttJsonData.createNestedObject("temps");
       delay(10);
       JsonObject powerObj = mqttJsonData.createNestedObject("power");
       delay(10);
       JsonObject energyObj = mqttJsonData.createNestedObject("energy");
       delay(10);
+      
       mqttJsonData["deviceId"] = client_id;
+      
       mqttJsonData["time"] = timeBuffer;
+
       mqttJsonData["meterStatus"] = mqttSensorData.meterStatus;
       mqttJsonData["sysStatus"] = mqttSensorData.sysStatus;
       
+      // * Voltage and current
 
-      mqttJsonData["current"] = mqttSensorData.lineCurrent;
       mqttJsonData["voltage"] = mqttSensorData.lineVoltage;
+      
+      mqttJsonData["current"] = mqttSensorData.lineCurrent;
+      
+      // * Power
       powerObj["active"] = mqttSensorData.power.active;
-      powerObj["apparent"] = mqttSensorData.power.apparent;
+      
       powerObj["factor"] = mqttSensorData.power.factor;
-      powerObj["reactive"] = mqttSensorData.power.reactive;
 
+      // * Temperatures
       tempObj["oil"] = mqttSensorData.temps.oil;
+      
       tempObj["cabinet"] = mqttSensorData.temps.cabinet;
-
-      energyObj["export"] = mqttSensorData.energy.exp;
-      energyObj["import"] = mqttSensorData.energy.import;
 
       char mqttDataBuffer[512];
       size_t n = serializeJson(mqttJsonData, mqttDataBuffer);
-      Serial.print(mqttDataBuffer);
       delay(50);
       mqttClient.publish("xfmormermon/", mqttDataBuffer, n);
-      mqttJsonData.clear();
     }
     delay(10); // <- fixes some issues with WiFi stability
     mqttClient.loop();
+    mqttJsonData.clear();
 
     if (!mqttClient.connected())
     {
@@ -188,7 +195,11 @@ void loop()
     }
     messagesWaiting = uxQueueMessagesWaiting(eicDataQueue);
     emptySpaces = uxQueueMessagesWaiting(eicDataQueue);
+    delay(250);
   }
+  
+  // ! End loop
+
 }
 
 void setupMQTTClient()
@@ -218,20 +229,14 @@ void setupEnergyMonitor()
 // readEICData: reads the EIC and inserts data into queue
 void readEICData(void *pvParameters)
 {
-  // Attach interrupt for reading data every one second
-  // readEICTimer = timerBegin(0, 80, true);
-  // timerAttachInterrupt(readEICTimer, &ReadData, true);
-  // timerAlarmWrite(readEICTimer, 1000000, true);
-  // timerAlarmEnable(readEICTimer); // Just Enable
-  // Serial.println("App");
 
   for (;;)
   {
     xformerMonitorData sensorData;
     delay(1000);
     // vTaskDelay(3000);
-    static int timesEnteredISR = 1;
-    timesEnteredISR++;
+    static int secondsPassed = 1;
+    secondsPassed++;
 
   
     // global time variable
@@ -239,9 +244,9 @@ void readEICData(void *pvParameters)
     
     // Read temperature data every 60 seconds
     // Obtain DS18B20 sensor data
-    if (timesEnteredISR == 60)
+    if (secondsPassed == 60)
     {
-      timesEnteredISR = 0;
+      secondsPassed = 0;
       monitorTempSensors.cabinet.requestTemperatures();
       monitorTempSensors.oil.requestTemperatures();
       // get cabinet temp sensor data
@@ -255,11 +260,6 @@ void readEICData(void *pvParameters)
     // set {"time":"2021-05-04T13:13:04Z"}
     delay(10);
     sensorData.timeInfo = gmtime(&now);
-    if (!sensorData.timeInfo)
-    {
-      Serial.println("Time is null");
-    }
-      Serial.println(sensorData.timeInfo);
     
     delay(10);
     // in hex
@@ -274,52 +274,15 @@ void readEICData(void *pvParameters)
     delay(10);
     sensorData.lineCurrent = eic.GetLineCurrent();
 
-    // convert lineVoltage and lineCurrent to floats
     delay(10);
     sensorData.power.factor = eic.GetPowerFactor();
+    delay(10);
+    sensorData.power.active = eic.GetActivePower();
+    delay(10);
 
     xQueueSend(eicDataQueue, &sensorData, portMAX_DELAY);
     // Serial.println("hello from ISR");
   }
-}
-
-void IRAM_ATTR ReadData()
-{
-  // // Count the number of times the ISR has been entered
-  // static int timesEnteredISR = 1;
-  // timesEnteredISR++;
-
-  // // Read temperature data every 60 seconds
-  // // Obtain DS18B20 sensor data
-  // if (timesEnteredISR == 60)
-  // {
-  //   // timesEnteredISR = 0;
-  //   // monitorTempSensors.cabinet.requestTemperatures();
-  //   // monitorTempSensors.oil.requestTemperatures();
-  //   // // get cabinet temp sensor data
-  //   // sensorData.temps.cabinet = monitorTempSensors.cabinet.getTempC(cabinetTempSensorAddr);
-  //   // // get oil temp sensor data
-  //   // sensorData.temps.oil =  monitorTempSensors.oil.getTempC(oilTempSensorAddr);
-  // }
-
-  // // Get the current time and store it in a variable
-  // time(&now);
-  // // set {"time":"2021-05-04T13:13:04Z"}
-  // sensorData.timeInfo = gmtime(&now);
-  // // in hex
-  // sensorData.meterStatus = eic.GetMeterStatus();
-
-  // sensorData.sysStatus = eic.GetSysStatus();
-
-  // sensorData.lineVoltage = eic.GetLineVoltage();
-
-  // sensorData.lineCurrent = eic.GetLineCurrent();
-  // // convert lineVoltage and lineCurrent to floats
-
-  // sensorData.power.factor = eic.GetPowerFactor();
-
-  // xQueueSend(eicDataQueue, &sensorData, portMAX_DELAY);
-  // // Serial.println("hello from ISR");
 }
 
 void setLEDColor(int R, int G, int B)
