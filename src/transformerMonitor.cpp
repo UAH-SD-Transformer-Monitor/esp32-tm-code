@@ -154,8 +154,6 @@ void loop()
       delay(10);
       JsonObject powerObj = mqttJsonData.createNestedObject("power");
       delay(10);
-      JsonObject energyObj = mqttJsonData.createNestedObject("energy");
-      delay(10);
       
       mqttJsonData["deviceId"] = client_id;
       
