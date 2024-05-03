@@ -267,7 +267,7 @@ void setupEnergyMonitor()
   // Serial TX pin
   ATMSerial.begin(9600, SERIAL_8N1, PIN_SerialATM_RX, PIN_SerialATM_TX);
 
-  eic.InitEnergyIC(ugain, lgain, igainl, vsag);
+  eic.InitEnergyIC(ugain, lgain, igainl, vsag, PLConstH, PLConstL);
   
   delay(1000);
 }

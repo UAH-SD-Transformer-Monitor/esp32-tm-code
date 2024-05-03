@@ -140,7 +140,7 @@ unsigned short ATM90E26_UART::GetSysStatus() {
 /*
 Initialise Energy IC, assume UART has already began in the main code
 */
-void ATM90E26_UART::InitEnergyIC(double ugain, double lgain, double igainl, double vSagTh) {
+void ATM90E26_UART::InitEnergyIC(double ugain, double lgain, double igainl, double vSagTh, double pl_consth, double pl_constl) {
   unsigned short systemstatus;
 
   CommEnergyIC(0, SoftReset, 0x789A); // Perform soft reset
@@ -151,8 +151,8 @@ void ATM90E26_UART::InitEnergyIC(double ugain, double lgain, double igainl, doub
   // Set metering calibration values
   CommEnergyIC(0, CalStart, 0x5678); // Metering calibration startup command.
                                      // Register 21 to 2B need to be set
-  CommEnergyIC(0, PLconstH, 0x0007); // PL Constant MSB
-  CommEnergyIC(0, PLconstL, 0x24A1); // PL Constant LSB
+  CommEnergyIC(0, PLconstH, pl_consth); // PL Constant MSB
+  CommEnergyIC(0, PLconstL, pl_constl); // PL Constant LSB
   CommEnergyIC(0, Lgain, lgain);    // Line calibration gain
   CommEnergyIC(0, Lphi, 0x0000);     // Line calibration angle
   CommEnergyIC(0, PStartTh, 0x08BD); // Active Startup Power Threshold

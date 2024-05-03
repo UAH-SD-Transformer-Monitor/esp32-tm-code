@@ -92,7 +92,7 @@ public:
   double GetPowerFactor();
   double GetImportEnergy();
   double GetExportEnergy();
-  void InitEnergyIC(double ugain, double lgain, double igainl, double vSagTh);
+  void InitEnergyIC(double ugain, double lgain, double igainl, double vSagTh, double pl_consth, double pl_constl);
   unsigned short GetSysStatus();
   unsigned short GetMeterStatus();
 
