@@ -26,14 +26,17 @@ mqttServer = mqttConfig.get("server")
 mqttPort = mqttConfig.get("port")
 
 if wifiConfig.get("ssid") == None:
-    print(f"wifi object variable SSID not defined. Define it in the config.yml file at the root of the project.")
+    print(f"wifi object variable 'ssid' not defined. Define it in the config.yml file at the root of the project.")
     os._exit(1)
 
 if wifiConfig.get("password") == None:
-    print(f"wifi object variable password not defined. Define it in the config.yml file at the root of the project.")
+    print(f"wifi object variable 'password' not defined. Define it in the config.yml file at the root of the project.")
     os._exit(1)
 if mqttConfig.get("server") == None:
-    print(f"mqtt object variable server not defined. Define it in the config.yml file at the root of the project.")
+    print(f"mqtt object variable 'server' not defined. Define it in the config.yml file at the root of the project.")
+    os._exit(1)
+if mqttConfig.get("id") == None:
+    print(f"mqtt object variable 'id' not defined. Define it in the config.yml file at the root of the project.")
     os._exit(1)
 
 
