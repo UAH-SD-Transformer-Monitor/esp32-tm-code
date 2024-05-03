@@ -4,31 +4,37 @@ This is the code that will control the ESP32.
 
 ## Requirements
 
-We will be using PlatformIO for this project. This will allow us to possibly use its remote test and dev features.
+We will be using PlatformIO for this project. This allows us to have greater control and allows for swapping boards if needed.
 
 ***You will need to change your upload port in `platformio.ini`.***
 
-## Env variables
+You will need to download the Silcon Labs Driver here - https://community.silabs.com/s/article/legacy-os-software-and-driver-packages?language=en_US
 
-Add the env variables to a `.env` file before building it:
+## Setup
 
-```sh
-XFORMER_MON_WIFI_SSID=Your-WiFi-SSID
-XFORMER_MON_WIFI_PASSWD=Your-WiFi-Password
+*The Excel sheet has the necessary formulas to calculate the sensor config values. The important ones go in a `include/sensorConfigValues.h`.*
 
-# Your MQTT server
-XFORMER_MON_MQTT_SERVER=xformer.utilitymonitor.io
+Add the necessary variables to a `config.yml` file before building the project.
 
-XFORMER_MON_MQTT_USER=test
+*If you have the server certificate at `cert.crt` at build time, this cert will be used instead of fetching it from the server.*
 
-XFORMER_MON_MQTT_PASS=secure-mqtt-pass
-
-XFORMER_MON_MQTT_ID=unique-id
-
-XFORMER_MON_MQTT_PORT="8883"
-
-# Must be "enabled" if using SSL!
-XFORMER_MON_USE_SSL="enabled"
+```yaml
+wifi:
+  # Your WiFi SSID
+  ssid: "Your-WiFi-SSID"
+  # Your WiFi Password
+  password: "Your-Secret-WiFi-Password"
+mqtt:
+  # Your MQTT server
+  server: your.mqtt-broker.tld
+  # The port the MQTT server is running on
+  port: 8883
+  # Your MQTT User
+  user: test
+  # Your MQTT Password
+  password: secure-mqtt-pass
+  # A unique ID, usually the name of the transformer
+  id: unique-id
 ```
 
 ## Development
@@ -37,7 +43,7 @@ Put .cpp files in `src`, .h files in `include`, and any libraries in `lib`.
 
 ## Tests
 
-Put tests in `src/tests`. These are not PlatformIO tests.
+Put tests in `src/tests`. **These are not PlatformIO tests.**
 
 Run and upload tests using PlatformIO's VSCode extension. Or upload them using the command `pio run -t upload -e Test[Name]`. Name is the name of the test to run.
 
@@ -59,4 +65,4 @@ build_src_filter =
 
 ## Setup
 
-Depending on which sensor is used, the board has to be set up differently.
+The PlatformIO environment `prod` is the same as `dev`, but `dev` has serial monitor code.

@@ -140,28 +140,31 @@ unsigned short ATM90E26_UART::GetSysStatus() {
 /*
 Initialise Energy IC, assume UART has already began in the main code
 */
-void ATM90E26_UART::InitEnergyIC() {
+void ATM90E26_UART::InitEnergyIC(double ugain, double lgain, double igainl, double vSagTh) {
   unsigned short systemstatus;
 
   CommEnergyIC(0, SoftReset, 0x789A); // Perform soft reset
   CommEnergyIC(0, FuncEn, 0x0030);    // Voltage sag irq=1, report on warnout
                                    // pin=1, energy dir change irq=0
-  CommEnergyIC(0, SagTh, 0x1F2F); // Voltage sag threshhold
+  CommEnergyIC(0, SagTh, vSagTh); // Voltage sag threshhold
 
   // Set metering calibration values
   CommEnergyIC(0, CalStart, 0x5678); // Metering calibration startup command.
                                      // Register 21 to 2B need to be set
-  CommEnergyIC(0, PLconstH, 0x0014); // PL Constant MSB
-  CommEnergyIC(0, PLconstL, 0x3FB7); // PL Constant LSB
-  CommEnergyIC(0, Lgain, 0x1D39);    // Line calibration gain
+  CommEnergyIC(0, PLconstH, 0x0007); // PL Constant MSB
+  CommEnergyIC(0, PLconstL, 0x24A1); // PL Constant LSB
+  CommEnergyIC(0, Lgain, lgain);    // Line calibration gain
   CommEnergyIC(0, Lphi, 0x0000);     // Line calibration angle
   CommEnergyIC(0, PStartTh, 0x08BD); // Active Startup Power Threshold
   CommEnergyIC(0, PNolTh, 0x0000);   // Active No-Load Power Threshold
   CommEnergyIC(0, QStartTh, 0x0AEC); // Reactive Startup Power Threshold
   CommEnergyIC(0, QNolTh, 0x0000);   // Reactive No-Load Power Threshold
   CommEnergyIC(0, MMode, 0x9422); // Metering Mode Configuration. All defaults.
-                                  // See pg 31 of datasheet.
-  CommEnergyIC(0, CSOne, 0x4A34); // Write CSOne, as self calculated
+  
+  // read CS1 and write the value back
+  double cs1 =  CommEnergyIC(1, CSOne, 0x0000);
+
+  CommEnergyIC(0, CSOne, cs1); // Write CSOne, as self calculated
 
   Serial.print("Checksum 1:");
   Serial.println(
@@ -172,13 +175,17 @@ void ATM90E26_UART::InitEnergyIC() {
   CommEnergyIC(
       0, AdjStart,
       0x5678); // Measurement calibration startup command, registers 31-3A
-  CommEnergyIC(0, Ugain, 0x352F);    // Voltage rms gain
-  CommEnergyIC(0, IgainL, 0x6E49);   // L line current gain
+  CommEnergyIC(0, Ugain, ugain);    // Voltage rms gain
+  CommEnergyIC(0, IgainL, igainl);   // L line current gain
   CommEnergyIC(0, Uoffset, 0x0000);  // Voltage offset
-  CommEnergyIC(0, IoffsetL, 0x0000); // L line current offset
+  CommEnergyIC(0, IoffsetL, 0x000); // L line current offset 
   CommEnergyIC(0, PoffsetL, 0x0000); // L line active power offset
   CommEnergyIC(0, QoffsetL, 0x0000); // L line reactive power offset
-  CommEnergyIC(0, CSTwo, 0xD294);    // Write CSTwo, as self calculated
+  
+  // read CS2 and write the value back:
+  double cs2 = CommEnergyIC(1, CSTwo, 0x0000);
+  
+  CommEnergyIC(0, CSTwo, cs2);    // Write CSTwo, as self calculated
 
   Serial.print("Checksum 2:");
   Serial.println(

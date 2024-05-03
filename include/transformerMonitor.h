@@ -10,6 +10,8 @@
 #include <idf_additions.h>
 #include <energyic_UART.h>
 #include <transformerMonitorServerCert.h>
+#include <sensorConfigValues.h>
+
 
 // Turn build flags (Macros) into strings
 #define ST(A) #A
@@ -17,29 +19,33 @@
 
 // extract the WiFi SSID from its macro
 #ifdef TM_WIFI_SSID
-  char const *ssid = STR(TM_WIFI_SSID);
+char const *ssid = STR(TM_WIFI_SSID);
 #endif
 
 // extract the WiFi Password from its macro
 #ifdef TM_WIFI_PASSWD
-  char const *wifiPassword = STR(TM_WIFI_PASSWD);
+char const *wifiPassword = STR(TM_WIFI_PASSWD);
 #endif
 
 // extract the MQTT Port from its macro
 #ifdef TM_MQTT_PORT
-  uint16_t mqttPort = (uint16_t) strtoul(STR(TM_MQTT_PORT), NULL, 10);
+uint16_t mqttPort = (uint16_t)strtoul(STR(TM_MQTT_PORT), NULL, 10);
 #endif
 // extract the MQTT server hostname from its macro
 #ifdef TM_MQTT_SVR
-  char const  *mqttServer = STR(TM_MQTT_SVR);
+char const *mqttServer = STR(TM_MQTT_SVR);
 #endif
 // extract the MQTT username from its macro
 #ifdef TM_MQTT_USER
-  char const  *mqttUser = STR(TM_MQTT_USER);
+char const *mqttUser = STR(TM_MQTT_USER);
 #endif
 // extract the MQTT password from its macro
 #ifdef TM_MQTT_PASSWD
-  char const  *mqttPass = STR(TM_MQTT_PASSWD);
+char const *mqttPass = STR(TM_MQTT_PASSWD);
+#endif
+
+#ifdef TM_MQTT_ID
+char const *client_id = STR(TM_MQTT_ID);
 #endif
 
 
@@ -47,8 +53,8 @@
 //********* GPIO PINS ************* //
 
 // pins for UART
-#define PIN_SerialATM_RX       19   //RX pin for AdaFruit Huzzah32
-#define PIN_SerialATM_TX       13   //TX pin for AdaFruit Huzzah32
+#define PIN_SerialATM_RX 19 // RX pin for AdaFruit Huzzah32
+#define PIN_SerialATM_TX 13 // TX pin for AdaFruit Huzzah32
 
 // GPIO pins where the DS18B20 sensors are connected
 const int oilTempBus = 5; // one in the epoxy resin
@@ -65,14 +71,13 @@ void messageReceived(String &topic, String &payload);
 WiFiClientSecure wifiClient;
 PubSubClient mqttClient;
 
-HardwareSerial ATMSerial(1);        //1 = just hardware serial number. ESP32 supports 3 hardware serials. UART 0 usually for flashing.
+HardwareSerial ATMSerial(1); // 1 = just hardware serial number. ESP32 supports 3 hardware serials. UART 0 usually for flashing.
 ATM90E26_UART eic(&ATMSerial);
 
-
 // * we are using the transformer's name to provide a unique ID
-char* client_id = "al-xformer-592";
 
-struct tempSensors {
+struct tempSensors
+{
   DallasTemperature oil, cabinet;
 };
 
@@ -83,26 +88,28 @@ DeviceAddress cabinetTempSensorAddr;
 OneWire oilTempBusOneWire(oilTempBus);
 OneWire cabinetTempBusOneWire(cabinetTempBus);
 
-// Pass our oneWire reference to Dallas Temperature sensor 
+// Pass our oneWire reference to Dallas Temperature sensor
 DallasTemperature oilTempSensor(&oilTempBusOneWire);
 DallasTemperature cabinetTempSensor(&cabinetTempBusOneWire);
 
 // temp sensor objects
 tempSensors monitorTempSensors{oilTempSensor, cabinetTempSensor};
 
-
 // Data structs for queue
-struct tempData {
+struct tempData
+{
   float cabinet, oil;
 };
 
-struct powerData {
+struct powerData
+{
   double active, factor;
 };
 
-struct xformerMonitorData {
+struct xformerMonitorData
+{
   unsigned short sysStatus, meterStatus;
-  double lineCurrent, lineVoltage;
+  double lineCurrent, lineVoltage, freq;
   tm *timeInfo;
   tempData temps;
   powerData power;
@@ -116,7 +123,7 @@ QueueHandle_t eicDataQueue;
 // End variables for tasks
 
 // Functions for tasks
-void readEICData( void * pvParameters );
+void readEICData(void *pvParameters);
 // End functions for tasks
 
 // Timer variable and function
@@ -139,7 +146,8 @@ void setupMQTTClient();
 // function to set up and initialize the energy monitor
 void setupEnergyMonitor();
 
-struct xformerMonConfigData {
+struct xformerMonConfigData
+{
   char *wifiSsid;
   char *wifiPass;
   char *mqttName;

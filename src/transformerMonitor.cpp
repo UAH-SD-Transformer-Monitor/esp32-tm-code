@@ -10,10 +10,16 @@ unsigned long lastMillis = 0;
 // const char* test_client_cert = "";  //to verify the client
 void setup()
 {
+  #if defined(DEV)
+  
   Serial.begin(9600);
+  
+  #endif // DEV
   delay(1000);
+
   setupEnergyMonitor();
-  // set LED pins
+
+  // setup LED pins
   pinMode(PIN_RED, OUTPUT);
   pinMode(PIN_GREEN, OUTPUT);
   pinMode(PIN_BLUE, OUTPUT);
@@ -23,10 +29,25 @@ void setup()
   delay(1000);
 
   // create data queue
-  eicDataQueue = xQueueCreate(60, sizeof(xformerMonitorData));
+  eicDataQueue = xQueueCreate(6000, sizeof(xformerMonitorData));
+
   if (eicDataQueue == 0)
   {
+
+  #if defined(DEV)
+
     printf("Failed to create queue= %p\n", eicDataQueue);
+  
+  #endif // DEV
+
+    eicDataQueue = xQueueCreate(600, sizeof(xformerMonitorData));
+    if (eicDataQueue == 0)
+    {
+      // halt execution
+      while (1) {}
+      
+    }
+    
   }
   // configure time
   // TODO: make dst and timezone configurable
@@ -59,22 +80,32 @@ void setup()
 }
 
 // connect connects to the WiFi and restarts it
-// TODO: set LED red when not connected, green when connected
 void connect()
 {
+  #if defined(DEV)
+  
   // connect to the WiFi network
   Serial.print("Attempting to connect to SSID: ");
   Serial.println(ssid);
+  
+  #endif // DEV
+
   WiFi.begin(ssid, wifiPassword);
 
   // attempt to connect to Wifi network:
   while (WiFi.status() != WL_CONNECTED)
   {
     setLEDColor(255, 0, 0);
+  #if defined(DEV)
+
     Serial.print(".");
+  
+  #endif // DEV
     // wait 1 second for re-trying
     delay(1000);
   }
+  #if defined(DEV)
+  
   Serial.print("Connected to ");
   Serial.println(ssid);
 
@@ -85,14 +116,21 @@ void connect()
 
   // we are using the ESP32's MAC address to provide a unique ID
   Serial.printf("The client %s connects to the public mqtt broker\n", client_id);
+  
+  #endif // DEV
   if (mqttClient.connect(client_id, mqttUser, mqttPass))
   {
     setLEDColor(0, 255, 0);
+  #if defined(DEV)
     Serial.println("\nconnected!");
+  #endif // DEV
+
   }
   else
   {
+  #if defined(DEV)
     Serial.println("\nnot connected to MQTT!");
+  #endif // DEV
     // set LED color to red
     setLEDColor(255, 0, 0);
     delay(2000);
@@ -138,7 +176,7 @@ void loop()
       strftime(timeBuffer, sizeof(timeBuffer), "%FT%TZ", mqttSensorData.timeInfo);
       delay(100);
       // if sysStatus is not reporting, or if there is no current
-      if (mqttSensorData.sysStatus == 0xFFFF || mqttSensorData.lineCurrent <= 0.05)
+      if (mqttSensorData.sysStatus == 0xFFFF || mqttSensorData.lineCurrent < 0.5 || mqttSensorData.lineVoltage <= 90)
       {
         // Sensor is not working - set LED red
         setLEDColor(255, 0, 0);
@@ -161,7 +199,10 @@ void loop()
       mqttJsonData["time"] = timeBuffer;
 
       mqttJsonData["meterStatus"] = mqttSensorData.meterStatus;
+
       mqttJsonData["sysStatus"] = mqttSensorData.sysStatus;
+      
+      mqttJsonData["frequency"] = mqttSensorData.freq;
       
       // * Voltage and current
 
@@ -203,9 +244,13 @@ void loop()
 
 void setupMQTTClient()
 {
-
+  #if defined(DEV)
+  
   Serial.print("Setting MQTT server: ");
   Serial.println(mqttServer);
+  
+  #endif // DEV
+  
 
   mqttClient.setClient(wifiClient);
   mqttClient.setServer(mqttServer, mqttPort);
@@ -221,7 +266,9 @@ void setupEnergyMonitor()
   // Serial RX pin
   // Serial TX pin
   ATMSerial.begin(9600, SERIAL_8N1, PIN_SerialATM_RX, PIN_SerialATM_TX);
-  eic.InitEnergyIC();
+
+  eic.InitEnergyIC(ugain, lgain, igainl, vsag);
+  
   delay(1000);
 }
 
@@ -241,10 +288,13 @@ void readEICData(void *pvParameters)
   for (;;)
   {
     static int secondsPassed = 0;
+    
     // global time variable
     time_t now;
+    
     // Get the current time and store it in a variable
     time(&now);
+
     // set {"time":"2021-05-04T13:13:04Z"}
     sensorData.timeInfo = gmtime(&now);
     
@@ -263,27 +313,31 @@ void readEICData(void *pvParameters)
 
     
     vTaskDelay(10);
-    // in hex
-    sensorData.meterStatus = eic.GetMeterStatus();
 
+    sensorData.meterStatus = eic.GetMeterStatus();
     vTaskDelay(10);
+
     sensorData.sysStatus = eic.GetSysStatus();
-    
     vTaskDelay(10);
 
     sensorData.lineVoltage = eic.GetLineVoltage();
-
     vTaskDelay(10);
+
     sensorData.lineCurrent = eic.GetLineCurrent();
-
     vTaskDelay(10);
+    
     sensorData.power.factor = eic.GetPowerFactor();
     vTaskDelay(10);
+
     sensorData.power.active = eic.GetActivePower();
     vTaskDelay(10);
-
+    
+    sensorData.freq = eic.GetFrequency();
+    vTaskDelay(10);
+    
     // send data to queue
     xQueueSend(eicDataQueue, &sensorData, portMAX_DELAY);
+    
     vTaskDelay(1000);
     secondsPassed++;
   }

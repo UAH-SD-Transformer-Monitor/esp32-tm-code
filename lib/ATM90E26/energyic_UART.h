@@ -92,7 +92,7 @@ public:
   double GetPowerFactor();
   double GetImportEnergy();
   double GetExportEnergy();
-  void InitEnergyIC();
+  void InitEnergyIC(double ugain, double lgain, double igainl, double vSagTh);
   unsigned short GetSysStatus();
   unsigned short GetMeterStatus();
 
@@ -100,6 +100,7 @@ private:
   unsigned short CommEnergyIC(unsigned char RW, unsigned char address,
                               unsigned short val);
   Stream *ATM_UART;
+  double _lgain, _ugain;
 };
 
 #endif

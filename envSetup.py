@@ -24,7 +24,6 @@ mqttConfig = monitorConfigFile.get("mqtt")
 
 mqttServer = mqttConfig.get("server")
 mqttPort = mqttConfig.get("port")
-sensorConfig = monitorConfigFile.get("sensor")
 
 if wifiConfig.get("ssid") == None:
     print(f"wifi object variable SSID not defined. Define it in the config.yml file at the root of the project.")
@@ -41,6 +40,7 @@ if mqttConfig.get("server") == None:
 env.Append(CPPDEFINES=[
   ("TM_WIFI_SSID", wifiConfig.get('ssid')),
   ("TM_WIFI_PASSWD", wifiConfig.get('password') ),
+  ("TM_MQTT_ID", mqttConfig.get('id')),
   ("TM_MQTT_PORT", mqttConfig.get('port')),
   ("TM_MQTT_SVR", mqttConfig.get("server")),
   ("TM_MQTT_USER", mqttConfig.get("user")),

@@ -14,19 +14,3 @@ mqtt:
   password: secure-mqtt-pass
   # A unique ID, usually the name of the transformer
   id: unique-id
-sensor:
-  config:
-    # voltage rms gain in hex. See docs/Gains.md for more information
-    ugain: 0x
-    # Voltage gain for CTs
-    lgain: 0x
-    # Voltage gain for neutral line
-    ngain: 0x
-    # power freqency
-    lfreq: 0x
-    # PGA Gain for current channels
-    pgagain: 0x
-    # Only for the ATM90E36 board
-    # determines which line to read
-    # Determines which voltage needs to be set.
-    line: "A"
